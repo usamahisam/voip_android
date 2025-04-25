@@ -12,8 +12,8 @@ public class SipConfig {
     /**
      * Resolution (QCIF 176x144, CIF 320x240, VGA 640x480, HD 1280x720, FHD 1920x1080)
      */
-    private long SIP_VIDEO_WIDTH = 640;
-    private long SIP_VIDEO_HEIGHT = 480;
+    private long SIP_VIDEO_WIDTH = 480;
+    private long SIP_VIDEO_HEIGHT = 640;
     /**
      * Bitrate (128 kbps, 256 kbps, 512 kbps, 1024 kbps, 2048 kbps)
      */

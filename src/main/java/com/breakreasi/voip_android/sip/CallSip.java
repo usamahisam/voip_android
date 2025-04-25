@@ -7,6 +7,7 @@ import org.pjsip.pjsua2.CallInfo;
 import org.pjsip.pjsua2.CallMediaInfo;
 import org.pjsip.pjsua2.CallMediaInfoVector;
 import org.pjsip.pjsua2.CallOpParam;
+import org.pjsip.pjsua2.MediaFormatVideo;
 import org.pjsip.pjsua2.OnCallMediaEventParam;
 import org.pjsip.pjsua2.OnCallMediaStateParam;
 import org.pjsip.pjsua2.OnCallStateParam;
@@ -115,21 +116,21 @@ public class CallSip extends Call {
     private void mediaVideo(CallMediaInfo cmi) {
         if (remoteVideo == null && cmi.getVideoIncomingWindowId() != pjsua2.INVALID_ID) {
             remoteVideo = new VideoWindow(cmi.getVideoIncomingWindowId());
-            videoRefresh();
+            videoRefresh("start");
         }
         if (localVideo == null && (cmi.getDir() & pjmedia_dir.PJMEDIA_DIR_ENCODING) != 0) {
             localVideo = new VideoPreview(cmi.getVideoCapDev());
             try {
                 localVideo.start(new VideoPreviewOpParam());
-                videoRefresh();
+                videoRefresh("start");
             } catch (Exception ignored) {
             }
         }
     }
 
-    private void videoRefresh() {
+    private void videoRefresh(String status) {
         if (localVideo != null && remoteVideo != null) {
-            onVideo(localVideo.getVideoWindow(), remoteVideo);
+            onVideo(localVideo.getVideoWindow(), remoteVideo, status);
         }
     }
 //
@@ -188,9 +189,9 @@ public class CallSip extends Call {
         manager.onCall(call, status);
     }
 
-    private void onVideo(VideoWindow localVideoWindow, VideoWindow remoteVideoWindow) {
+    private void onVideo(VideoWindow localVideoWindow, VideoWindow remoteVideoWindow, String status) {
         if (manager == null) return;
-        manager.onSipVideo(localVideoWindow, remoteVideoWindow);
+        manager.onSipVideo(localVideoWindow, remoteVideoWindow, status);
     }
 
     public CallInfo getCallInfo() {

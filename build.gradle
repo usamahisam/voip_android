@@ -26,3 +26,8 @@ android {
     }
 }
 
+dependencies {
+    implementation(libs.material)
+    implementation(project(":pjsua2"))
+}
+

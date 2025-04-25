@@ -70,8 +70,12 @@ public class SipManager {
     }
 
     private void init() {
-        account = new AccountSip(mContext, this);
         setting = new SettingSip(this);
+        account = new AccountSip(mContext, this);
+    }
+
+    public SettingSip getSettingSip() {
+        return setting;
     }
 
     public AccountSip getAccountSip() {
@@ -118,9 +122,9 @@ public class SipManager {
         }
     }
 
-    public void onSipVideo(VideoWindow localVideoWindow, VideoWindow rocalVideoWindow) {
+    public void onSipVideo(VideoWindow localVideoWindow, VideoWindow rocalVideoWindow, String status) {
         for (SipManagerCallback callback : callbacks) {
-            callback.onSipVideo(localVideoWindow, rocalVideoWindow);
+            callback.onSipVideo(localVideoWindow, rocalVideoWindow, status);
         }
     }
 

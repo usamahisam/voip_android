@@ -53,12 +53,8 @@ public class AccountSip extends Account {
         accCfg.getVideoConfig().setAutoTransmitOutgoing(true);
         accCfg.getVideoConfig().setAutoShowIncoming(true);
 
-        try {
-            int capDev = accCfg.getVideoConfig().getDefaultCaptureDevice();
-            manager.getEndpoint().vidDevManager().setCaptureOrient(capDev, 0, true);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        int capDev = accCfg.getVideoConfig().getDefaultCaptureDevice();
+        manager.getSettingSip().configureVidDev(capDev);
 
         try {
             create(accCfg);

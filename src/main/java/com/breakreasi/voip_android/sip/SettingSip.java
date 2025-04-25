@@ -1,11 +1,19 @@
 package com.breakreasi.voip_android.sip;
 
+import android.util.Log;
+
 import org.pjsip.pjsua2.AudDevManager;
 import org.pjsip.pjsua2.CodecInfo;
 import org.pjsip.pjsua2.CodecInfoVector2;
 import org.pjsip.pjsua2.Endpoint;
+import org.pjsip.pjsua2.MediaFormatVideo;
 import org.pjsip.pjsua2.VidCodecParam;
+import org.pjsip.pjsua2.VidDevManager;
+import org.pjsip.pjsua2.VideoDevInfo;
+import org.pjsip.pjsua2.VideoDevInfoVector;
+import org.pjsip.pjsua2.VideoDevInfoVector2;
 import org.pjsip.pjsua2.pjmedia_aud_dev_route;
+import org.pjsip.pjsua2.pjmedia_orient;
 
 public class SettingSip {
     private SipManager sipManager;
@@ -18,19 +26,17 @@ public class SettingSip {
     }
 
     private void init() {
-        configureDev();
         configureAudio();
         configureCodecs();
         configureVideoCodecs();
     }
 
-    private void configureDev() {
-//        int capDev = sipManager.getAccountSip().getAccountConfig().getVideoConfig().getDefaultCaptureDevice();
-//        VidDevManager vidDevMgr = endpoint.vidDevManager();
-//        try {
-//            vidDevMgr.setCaptureOrient(capDev, 90);
-//        } catch (Exception ignored) {
-//        }
+    public void configureVidDev(int capDev) {
+        VidDevManager vidMgr = endpoint.vidDevManager();
+        try {
+            vidMgr.setCaptureOrient(capDev, pjmedia_orient.PJMEDIA_ORIENT_ROTATE_270DEG);
+        } catch (Exception ignored) {
+        }
     }
 
     private void configureAudio() {
@@ -82,13 +88,14 @@ public class SettingSip {
         // Set resolusi
         param.getEncFmt().setWidth(sipManager.getConfig().getSIP_VIDEO_WIDTH());
         param.getEncFmt().setHeight(sipManager.getConfig().getSIP_VIDEO_HEIGHT());
-        // Set bitrate
-        long AVG_BITRATE = sipManager.getConfig().getSIP_VIDEO_BITRATE() / 2;
-        param.getEncFmt().setAvgBps(AVG_BITRATE * 1000);
-        param.getEncFmt().setMaxBps(sipManager.getConfig().getSIP_VIDEO_BITRATE() * 1000);
-        // Set frame rate
-        param.getEncFmt().setFpsDenum(sipManager.getConfig().getSIP_VIDEO_FPS() - 5);
-        param.getEncFmt().setFpsNum(sipManager.getConfig().getSIP_VIDEO_FPS());
+        param.getDecFmt().setWidth(sipManager.getConfig().getSIP_VIDEO_WIDTH());
+        param.getDecFmt().setHeight(sipManager.getConfig().getSIP_VIDEO_HEIGHT());
+//        // Set bitrate
+//        param.getEncFmt().setAvgBps(sipManager.getConfig().getSIP_VIDEO_BITRATE() * 1000);
+//        param.getEncFmt().setMaxBps(sipManager.getConfig().getSIP_VIDEO_BITRATE() * 1000);
+//        // Set frame rate
+//        param.getEncFmt().setFpsDenum(sipManager.getConfig().getSIP_VIDEO_FPS());
+//        param.getEncFmt().setFpsNum(sipManager.getConfig().getSIP_VIDEO_FPS());
         try {
             endpoint.setVideoCodecParam(codecId, param);
         } catch (Exception ignored) {
