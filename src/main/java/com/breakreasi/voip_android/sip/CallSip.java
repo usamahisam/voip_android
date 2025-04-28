@@ -27,7 +27,6 @@ import java.util.List;
 public class CallSip extends Call {
     private Context context;
     private SipManager manager;
-    private List<CallTransmitSip> transmitters;
     private int CALL_STATUS;
     private VideoWindow remoteVideo;
     private VideoPreview localVideo;
@@ -36,14 +35,12 @@ public class CallSip extends Call {
         super(mManager.getAccount());
         context = cContext;
         manager = mManager;
-        transmitters = new ArrayList<>();
     }
 
     public CallSip(Context cContext, SipManager mManager, int callId) {
         super(mManager.getAccount(), callId);
         context = cContext;
         manager = mManager;
-        transmitters = new ArrayList<>();
     }
 
     @Override
@@ -116,27 +113,17 @@ public class CallSip extends Call {
     private void mediaVideo(CallMediaInfo cmi) {
         if (remoteVideo == null && cmi.getVideoIncomingWindowId() != pjsua2.INVALID_ID) {
             remoteVideo = new VideoWindow(cmi.getVideoIncomingWindowId());
-            videoRefresh("start");
+            onVideo(remoteVideo, "video_remote");
         }
         if (localVideo == null && (cmi.getDir() & pjmedia_dir.PJMEDIA_DIR_ENCODING) != 0) {
             localVideo = new VideoPreview(cmi.getVideoCapDev());
             try {
                 localVideo.start(new VideoPreviewOpParam());
-                videoRefresh("start");
+                onVideo(remoteVideo, "video_local");
             } catch (Exception ignored) {
             }
         }
     }
-
-    private void videoRefresh(String status) {
-        if (localVideo != null && remoteVideo != null) {
-            onVideo(localVideo.getVideoWindow(), remoteVideo, status);
-        }
-    }
-//
-//    private void mediaAudio(AudioMedia audMedia) {
-////                    transmit.startRemoteAudio(audMedia);
-//    }
 
     public void call(String destinationUser, boolean isVideo) {
         String sipUri = "sip:" + destinationUser + "@" + manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT();
@@ -189,9 +176,9 @@ public class CallSip extends Call {
         manager.onCall(call, status);
     }
 
-    private void onVideo(VideoWindow localVideoWindow, VideoWindow remoteVideoWindow, String status) {
+    private void onVideo(VideoWindow localVideoWindow, String status) {
         if (manager == null) return;
-        manager.onSipVideo(localVideoWindow, remoteVideoWindow, status);
+        manager.onSipVideo(localVideoWindow, status);
     }
 
     public CallInfo getCallInfo() {

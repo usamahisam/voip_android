@@ -47,7 +47,7 @@ public class SipManager {
             endpoint = new Endpoint();
             endpoint.libCreate();
 
-            EpConfig epConfig = new EpConfig();
+            epConfig = new EpConfig();
             epConfig.getUaConfig().setUserAgent(String.format(
                     "Jasvicall Billing SIP Client/%s (%s %s; Android %s)",
                     1.1,
@@ -122,9 +122,9 @@ public class SipManager {
         }
     }
 
-    public void onSipVideo(VideoWindow localVideoWindow, VideoWindow rocalVideoWindow, String status) {
+    public void onSipVideo(VideoWindow localVideoWindow, String status) {
         for (SipManagerCallback callback : callbacks) {
-            callback.onSipVideo(localVideoWindow, rocalVideoWindow, status);
+            callback.onSipVideo(localVideoWindow, status);
         }
     }
 
