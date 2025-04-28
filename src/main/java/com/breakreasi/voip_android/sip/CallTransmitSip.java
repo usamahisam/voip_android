@@ -35,12 +35,20 @@ public class CallTransmitSip {
 
     public void startLocalVideo(VideoWindow videoWindow) {
         localVideoHandler.setVideoWindow(videoWindow);
-//        resizeSurface(videoWindow, localVideoView);
+        resizeSurfaceLocal(videoWindow, localVideoView);
     }
 
     public void startRemoteVideo(VideoWindow videoWindow) {
         remoteVideoHandler.setVideoWindow(videoWindow);
         resizeSurface(videoWindow, remoteVideoView);
+    }
+
+    public void resizeSurfaceLocal(VideoWindow videoWindow, SurfaceView surfaceView) {
+        surfaceView.post(() -> {
+            surfaceView.setZOrderMediaOverlay(true);
+            surfaceView.invalidate();
+            surfaceView.requestLayout();
+        });
     }
 
     public void resizeSurface(VideoWindow videoWindow, SurfaceView surfaceView) {

@@ -88,8 +88,6 @@ public class SettingSip {
         // Set resolusi
         param.getEncFmt().setWidth(sipManager.getConfig().getSIP_VIDEO_WIDTH());
         param.getEncFmt().setHeight(sipManager.getConfig().getSIP_VIDEO_HEIGHT());
-        param.getDecFmt().setWidth(sipManager.getConfig().getSIP_VIDEO_WIDTH());
-        param.getDecFmt().setHeight(sipManager.getConfig().getSIP_VIDEO_HEIGHT());
 //        // Set bitrate
 //        param.getEncFmt().setAvgBps(sipManager.getConfig().getSIP_VIDEO_BITRATE() * 1000);
 //        param.getEncFmt().setMaxBps(sipManager.getConfig().getSIP_VIDEO_BITRATE() * 1000);
