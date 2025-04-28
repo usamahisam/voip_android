@@ -2,6 +2,7 @@ package com.breakreasi.voip_android;
 
 import android.content.Context;
 import android.hardware.camera2.CameraManager;
+import android.media.AudioManager;
 import android.util.Log;
 import android.view.SurfaceView;
 
@@ -25,6 +26,7 @@ public class VOIP implements SipManagerCallback {
     private boolean isVideo;
     private String authSessionFor;
     private CameraManager cm;
+    private AudioManager am;
     private SipManager sip;
     private CallSip sipCall;
     private SurfaceView localVideo, remoteVideo;
@@ -41,10 +43,11 @@ public class VOIP implements SipManagerCallback {
 
     public void init(VOIPType type) {
         setType(type);
+        cm = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+        am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         if (this.type == VOIPType.SIP
         && sip == null) {
-            cm = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
-            sip = new SipManager(context, cm);
+            sip = new SipManager(context, cm, am);
             sip.registerListener(this);
         }
     }

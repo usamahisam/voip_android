@@ -2,6 +2,7 @@ package com.breakreasi.voip_android.sip;
 
 import android.content.Context;
 import android.hardware.camera2.CameraManager;
+import android.media.AudioManager;
 import android.os.Build;
 
 import org.pjsip.PjCameraInfo2;
@@ -17,6 +18,7 @@ import java.util.List;
 public class SipManager {
     private Context mContext;
     private CameraManager cm;
+    private AudioManager am;
     private SipConfig config;
     private Endpoint endpoint;
     private EpConfig epConfig;
@@ -24,9 +26,10 @@ public class SipManager {
     private SettingSip setting;
     private List<SipManagerCallback> callbacks;
 
-    public SipManager(Context context, CameraManager cm) {
+    public SipManager(Context context, CameraManager cm, AudioManager am) {
         this.mContext = context;
         this.cm = cm;
+        this.am = am;
         callbacks = new ArrayList<>();
         initConfig();
         initEngine();
@@ -119,6 +122,12 @@ public class SipManager {
     public void onCall(CallSip call, String status) {
         for (SipManagerCallback callback : callbacks) {
             callback.onSipCall(call, status);
+        }
+        if (status.contains("connected")) {
+            am.setMode(AudioManager.MODE_IN_COMMUNICATION);
+        }
+        if (status.contains("disconnected")) {
+            am.setMode(AudioManager.MODE_NORMAL);
         }
     }
 
