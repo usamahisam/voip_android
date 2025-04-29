@@ -104,6 +104,9 @@ public class CallSip extends Call {
                     if (cmi.getType() == pjmedia_type.PJMEDIA_TYPE_VIDEO) {
                         mediaVideo(cmi);
                     }
+                    if (cmi.getType() == pjmedia_type.PJMEDIA_TYPE_AUDIO) {
+                        mediaAudio(cmi);
+                    }
                 }
             }
         } catch (Exception ignored) {
@@ -123,6 +126,10 @@ public class CallSip extends Call {
             } catch (Exception ignored) {
             }
         }
+    }
+
+    private void mediaAudio(CallMediaInfo cmi) {
+
     }
 
     public void call(String destinationUser, boolean isVideo) {

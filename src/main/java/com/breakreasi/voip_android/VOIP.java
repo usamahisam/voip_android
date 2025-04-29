@@ -154,13 +154,11 @@ public class VOIP implements SipManagerCallback {
     @Override
     public void onSipVideo(VideoWindow videoWindow, String status) {
         if (status.equals("video_local")) {
-            Log.d("VANVBSNVABS", "local");
             if (localVideoHandler != null) {
                 localVideoHandler.setVideoWindow(videoWindow);
                 SurfaceUtil.resizeSurface(localVideo, videoWindow);
             }
         } else if (status.equals("video_remote")) {
-            Log.d("VANVBSNVABS", "remote");
             if (remoteVideoHandler != null) {
                 remoteVideoHandler.setVideoWindow(videoWindow);
                 SurfaceUtil.resizeSurface(localVideo, videoWindow);
