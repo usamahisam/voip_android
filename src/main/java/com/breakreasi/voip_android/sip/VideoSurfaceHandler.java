@@ -29,9 +29,9 @@ public class VideoSurfaceHandler implements SurfaceHolder.Callback {
     }
 
     private void setSurfaceHolder(SurfaceHolder holder) {
-        if (!active) return;
-        if (videoWindow == null) return;
-        if (holder == null) return;
+//        if (!active) return;
+//        if (videoWindow == null) return;
+//        if (holder == null) return;
         try {
             holder.setKeepScreenOn(true);
             VideoWindowHandle wh = new VideoWindowHandle();

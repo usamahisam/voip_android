@@ -29,5 +29,10 @@ android {
 dependencies {
     implementation(libs.material)
     implementation(project(":pjsua2"))
+    implementation libs.full.rtc.basic
+    implementation libs.full.ains
+    implementation libs.full.jnd
+    implementation libs.full.full.audio.format
+    implementation libs.full.super.resolution
 }
 

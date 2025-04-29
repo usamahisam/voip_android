@@ -1,6 +1,7 @@
 package com.breakreasi.voip_android.sip;
 
 import android.content.Context;
+import android.util.Log;
 
 import org.pjsip.pjsua2.Account;
 import org.pjsip.pjsua2.AccountConfig;
@@ -12,11 +13,14 @@ import org.pjsip.pjsua2.OnRegStartedParam;
 import org.pjsip.pjsua2.OnRegStateParam;
 import org.pjsip.pjsua2.pjsip_status_code;
 
+import java.util.Objects;
+
 public class AccountSip extends Account {
     private Context context;
     private SipManager manager;
     private AccountConfig accCfg;
     private CallSip call;
+    public String displayName;
     public String username;
     public String password;
     public boolean registration;
@@ -27,14 +31,24 @@ public class AccountSip extends Account {
         manager = mManager;
         isLogin = false;
         call = null;
+        displayName = "";
         username = "";
         password = "";
         registration = false;
     }
 
-    public void register(String username, String password, boolean registration) {
+    public void setAuth(String displayName, String username, String password) {
+        this.displayName = displayName;
         this.username = username;
         this.password = password;
+    }
+
+    public void reRegister() {
+        register(displayName, username, password, true);
+    }
+
+    public void register(String displayName, String username, String password, boolean registration) {
+        setAuth(displayName, username, password);
         this.registration = registration;
 
         AuthCredInfoVector credArray = new AuthCredInfoVector();
@@ -42,17 +56,22 @@ public class AccountSip extends Account {
         credArray.add(cred);
 
         accCfg = new AccountConfig();
-        accCfg.setIdUri("sip:" + username + "@" + manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT());
+        accCfg.setIdUri("\"" + displayName + "\" <sip:" + username + "@" + manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT() + ">");
         accCfg.getSipConfig().setAuthCreds(credArray);
         accCfg.getSipConfig().getProxies().clear();
-        accCfg.getSipConfig().getProxies().add("sip:"+manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT() + ";transport=UDP;port=" + manager.getConfig().getSIP_PORT());
-        accCfg.getSipConfig().getProxies().add("sip:"+manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT() + ";transport=TCP;port=" + manager.getConfig().getSIP_PORT());
+//        accCfg.getSipConfig().getProxies().add("sip:"+manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT() + ";transport=UDP;port=" + manager.getConfig().getSIP_PORT());
+//        accCfg.getSipConfig().getProxies().add("sip:"+manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT() + ";transport=TCP;port=" + manager.getConfig().getSIP_PORT());
         accCfg.getRegConfig().setRegistrarUri("sip:" + manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT());
         accCfg.getRegConfig().setRegisterOnAdd(true);
         accCfg.getRegConfig().setDropCallsOnFail(true);
         accCfg.getVideoConfig().setAutoTransmitOutgoing(true);
         accCfg.getVideoConfig().setAutoShowIncoming(true);
+        accCfg.getVideoConfig().setRateControlMethod(0);
+        accCfg.getVideoConfig().setRateControlBandwidth(0);
+        accCfg.getMediaConfig().setEnableLoopback(false);
+        accCfg.getMediaConfig().setRtcpMuxEnabled(true);
 
+        manager.getSettingSip().configureCamera();
         int capDev = accCfg.getVideoConfig().getDefaultCaptureDevice();
         manager.getSettingSip().configureVidDev(capDev);
 
@@ -87,7 +106,7 @@ public class AccountSip extends Account {
             }
         } catch (Exception e) {
             isLogin = false;
-            manager.onAccountSipStatus(null, e.getMessage());
+            manager.onAccountSipStatus(null, Objects.requireNonNull(e.getMessage()));
         }
     }
 
@@ -102,12 +121,21 @@ public class AccountSip extends Account {
         return call;
     }
 
+    public CallSip getCall() {
+        return call;
+    }
+
     @Override
     public void onIncomingCall(OnIncomingCallParam prm) {
         super.onIncomingCall(prm);
         if (call != null) call.delete();
         call = new CallSip(context, manager, prm.getCallId());
-        manager.onCall(call, "call_incoming");
+        try {
+            String stat_video = call.getInfo().getRemVideoCount() == 1 ? "video" : "audio";
+            manager.onCall(call, "call_incoming_" + stat_video);
+        } catch (Exception ignored) {
+            manager.onCall(call, "call_incoming_voice");
+        }
     }
 
     @Override

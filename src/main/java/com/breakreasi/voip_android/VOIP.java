@@ -3,14 +3,16 @@ package com.breakreasi.voip_android;
 import android.content.Context;
 import android.hardware.camera2.CameraManager;
 import android.media.AudioManager;
-import android.util.Log;
 import android.view.SurfaceView;
 
+import androidx.annotation.Nullable;
+
+import com.breakreasi.voip_android.notification.NotificationCall;
 import com.breakreasi.voip_android.sip.CallSip;
+import com.breakreasi.voip_android.sip.SipCallData;
+import com.breakreasi.voip_android.sip.SipCamera;
 import com.breakreasi.voip_android.sip.SipManager;
 import com.breakreasi.voip_android.sip.SipManagerCallback;
-import com.breakreasi.voip_android.sip.SurfaceUtil;
-import com.breakreasi.voip_android.sip.VideoSurfaceHandler;
 
 import org.pjsip.pjsua2.AccountInfo;
 import org.pjsip.pjsua2.VideoWindow;
@@ -22,15 +24,10 @@ public class VOIP implements SipManagerCallback {
     private Context context;
     private VOIPType type;
     private List<VOIPCallback> callbacks;
-    private String username, password, to;
-    private boolean isVideo;
-    private String authSessionFor;
     private CameraManager cm;
     private AudioManager am;
     private SipManager sip;
-    private CallSip sipCall;
-    private SurfaceView localVideo, remoteVideo;
-    private VideoSurfaceHandler localVideoHandler, remoteVideoHandler;
+    private NotificationCall notificationCall;
 
     public VOIP(Context context) {
         this.context = context;
@@ -41,10 +38,11 @@ public class VOIP implements SipManagerCallback {
         this.type = type;
     }
 
-    public void init(VOIPType type) {
+    public void init(VOIPType type, Context context) {
         setType(type);
         cm = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
         am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+        notificationCall = new NotificationCall(context, this);
         if (this.type == VOIPType.SIP
         && sip == null) {
             sip = new SipManager(context, cm, am);
@@ -52,67 +50,108 @@ public class VOIP implements SipManagerCallback {
         }
     }
 
-    public void auth(String username, String password) {
-        auth(username, password, "");
+    public AudioManager getAudioManager() {
+        return am;
+
     }
 
-    public void auth(String username, String password, String authSessionFor) {
-        this.username = username;
-        this.password = password;
-        this.authSessionFor = authSessionFor;
+    public NotificationCall getNotification() {
+        return notificationCall;
+    }
+
+    public void auth(String username, String password) {
         if (this.type == VOIPType.SIP) {
-            sip.register(username, password, true);
+            sip.register(username, username, password, true);
         }
     }
 
     public void makeCall(String to, boolean isVideo) {
-        this.to = to;
-        this.isVideo = isVideo;
         if (this.type == VOIPType.SIP) {
-            auth(username, password, "makeCall");
+            sip.makeCall(to, isVideo);
         }
     }
 
     public void accept() {
         if (this.type == VOIPType.SIP) {
-            sipCall.accept();
+            sip.getCall().accept();
         }
     }
 
     public void hangup() {
         if (this.type == VOIPType.SIP) {
-            sipCall.decline();
+            sip.getCall().decline();
+        }
+    }
+
+    public void setMute(boolean isMute) {
+        if (this.type == VOIPType.SIP) {
+            if (isMute) {
+                sip.getSettingSip().muteMic();
+            } else {
+                sip.getSettingSip().unmuteMic();
+            }
+        }
+    }
+
+    public void setLoudspeaker(boolean isLoudspeaker) {
+        if (this.type == VOIPType.SIP) {
+            if (isLoudspeaker) {
+                sip.getSettingSip().turnOnSpeakerphone();
+            } else {
+                sip.getSettingSip().turnOffSpeakerphone();
+            }
+        }
+    }
+
+    public void switchCamera(VOIPCamera voipCamera) {
+        if (this.type == VOIPType.SIP) {
+            if (voipCamera == VOIPCamera.AUTO) {
+                if (sip.getSettingSip().getSipCamera() == SipCamera.FRONT) {
+                    sip.getSettingSip().switchCamera(SipCamera.BACK);
+                } else {
+                    sip.getSettingSip().switchCamera(SipCamera.FRONT);
+                }
+            } else if (voipCamera == VOIPCamera.FRONT) {
+                sip.getSettingSip().switchCamera(SipCamera.FRONT);
+            } else if (voipCamera == VOIPCamera.BACK) {
+                sip.getSettingSip().switchCamera(SipCamera.BACK);
+            }
         }
     }
 
     public void setLocalVideo(SurfaceView localVideo) {
         if (this.type == VOIPType.SIP) {
-            this.localVideo = localVideo;
-            this.localVideoHandler = new VideoSurfaceHandler(localVideo.getHolder());
-            this.localVideo.getHolder().addCallback(this.localVideoHandler);
+            sip.getVideo().setLocalVideo(localVideo);
         }
     }
 
     public void unsetLocalVideo() {
         if (this.type == VOIPType.SIP) {
-            this.localVideo = null;
-            this.localVideoHandler = null;
+            sip.getVideo().unsetLocalVideo();
         }
     }
 
     public void setRemoteVideo(SurfaceView remoteVideo) {
         if (this.type == VOIPType.SIP) {
-            this.remoteVideo = remoteVideo;
-            this.remoteVideoHandler = new VideoSurfaceHandler(remoteVideo.getHolder());
-            this.remoteVideo.getHolder().addCallback(this.remoteVideoHandler);
+            sip.getVideo().setRemoteVideo(remoteVideo);
         }
     }
 
     public void unsetRemoteVideo() {
         if (this.type == VOIPType.SIP) {
-            this.remoteVideo = null;
-            this.remoteVideoHandler = null;
+            sip.getVideo().unsetRemoteVideo();
         }
+    }
+
+    @Nullable
+    public VOIPCallData getCallData() {
+        if (this.type == VOIPType.SIP) {
+            SipCallData data = sip.getCall().getCallData();
+            if (data != null) {
+                return new VOIPCallData(data.getDisplayName(), data.getPhone(), data.isVideo());
+            }
+        }
+        return null;
     }
 
     public void setCallback(VOIPCallback callback) {
@@ -126,43 +165,21 @@ public class VOIP implements SipManagerCallback {
     }
 
     public void notifyCallbacks(String status) {
-        for (VOIPCallback callback : new ArrayList<>(callbacks)) { // pakai copy biar aman kalau ada unregister di dalam callback
+        for (VOIPCallback callback : new ArrayList<>(callbacks)) {
             callback.onStatus(status);
         }
     }
 
     @Override
     public void onSipAccountInfo(AccountInfo accountInfo, String status) {
-        if (status.equals("success")) {
-            if (authSessionFor.equals("makeCall")) {
-                sipCall = sip.initCall();
-                sipCall.call(to, isVideo);
-            }
-        }
-//        if (status.contains("Unauthorized")) {
-//        }
     }
 
     @Override
     public void onSipCall(CallSip call, String status) {
-        if (status.contains("incoming")) {
-            sipCall = call;
-        }
         notifyCallbacks(status);
     }
 
     @Override
     public void onSipVideo(VideoWindow videoWindow, String status) {
-        if (status.equals("video_local")) {
-            if (localVideoHandler != null) {
-                localVideoHandler.setVideoWindow(videoWindow);
-                SurfaceUtil.resizeSurface(localVideo, videoWindow);
-            }
-        } else if (status.equals("video_remote")) {
-            if (remoteVideoHandler != null) {
-                remoteVideoHandler.setVideoWindow(videoWindow);
-                SurfaceUtil.resizeSurface(localVideo, videoWindow);
-            }
-        }
     }
 }

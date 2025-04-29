@@ -1,13 +1,17 @@
 package com.breakreasi.voip_android.sip;
 
 import android.content.Context;
+import android.os.CountDownTimer;
+import android.util.Log;
 
+import androidx.annotation.Nullable;
+
+import org.pjsip.pjsua2.AudioMedia;
 import org.pjsip.pjsua2.Call;
 import org.pjsip.pjsua2.CallInfo;
 import org.pjsip.pjsua2.CallMediaInfo;
 import org.pjsip.pjsua2.CallMediaInfoVector;
 import org.pjsip.pjsua2.CallOpParam;
-import org.pjsip.pjsua2.MediaFormatVideo;
 import org.pjsip.pjsua2.OnCallMediaEventParam;
 import org.pjsip.pjsua2.OnCallMediaStateParam;
 import org.pjsip.pjsua2.OnCallStateParam;
@@ -20,9 +24,10 @@ import org.pjsip.pjsua2.pjsip_inv_state;
 import org.pjsip.pjsua2.pjsip_status_code;
 import org.pjsip.pjsua2.pjsua2;
 import org.pjsip.pjsua2.pjsua_call_media_status;
+import org.pjsip.pjsua2.pjsua_vid_req_keyframe_method;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class CallSip extends Call {
     private Context context;
@@ -35,12 +40,14 @@ public class CallSip extends Call {
         super(mManager.getAccount());
         context = cContext;
         manager = mManager;
+        resetMediaVideo();
     }
 
     public CallSip(Context cContext, SipManager mManager, int callId) {
         super(mManager.getAccount(), callId);
         context = cContext;
         manager = mManager;
+        resetMediaVideo();
     }
 
     @Override
@@ -72,12 +79,7 @@ public class CallSip extends Call {
         if (CALL_STATUS == callInfo.getState()) {
             return;
         }
-        String ci_set_call;
-        if (callInfo.getSetting().getVideoCount() == 1L) {
-            ci_set_call = "video";
-        } else {
-            ci_set_call = "voice";
-        }
+        String stat_video = (callInfo.getRemVideoCount() == 1) ? "video" : "audio";
         CALL_STATUS = callInfo.getState();
         if (CALL_STATUS == pjsip_inv_state.PJSIP_INV_STATE_CALLING) {
             onCall(this, "call_calling");
@@ -86,7 +88,7 @@ public class CallSip extends Call {
         } else if (CALL_STATUS == pjsip_inv_state.PJSIP_INV_STATE_CONNECTING) {
             onCall(this, "call_connecting");
         } else if (CALL_STATUS == pjsip_inv_state.PJSIP_INV_STATE_CONFIRMED) {
-            onCall(this, "call_connected_" + ci_set_call);
+            onCall(this, "call_connected_" + stat_video);
         } else if (CALL_STATUS == pjsip_inv_state.PJSIP_INV_STATE_DISCONNECTED) {
             onCall(this, "call_disconnected " + callInfo.getLastReason());
             delete();
@@ -105,11 +107,30 @@ public class CallSip extends Call {
                         mediaVideo(cmi);
                     }
                     if (cmi.getType() == pjmedia_type.PJMEDIA_TYPE_AUDIO) {
-                        mediaAudio(cmi);
+                        mediaAudio(i);
                     }
                 }
             }
         } catch (Exception ignored) {
+        }
+    }
+
+    @Nullable
+    public SipCallData getCallData() {
+        try {
+            String displayName = "";
+            String phone = "";
+            String stat_video = (getCallInfo().getRemVideoCount() == 1) ? "video" : "audio";
+            String remoteUri = getCallInfo().getRemoteUri();
+            Pattern pattern = Pattern.compile("\"?(.*?)\"?\\s*<sip:([^@>]+)@");
+            Matcher matcher = pattern.matcher(remoteUri);
+            if (matcher.find()) {
+                displayName = matcher.group(1);
+                phone = matcher.group(2);
+            }
+            return new SipCallData(displayName, phone, stat_video.equals("video"));
+        } catch (Exception ignored) {
+            return null;
         }
     }
 
@@ -122,21 +143,39 @@ public class CallSip extends Call {
             localVideo = new VideoPreview(cmi.getVideoCapDev());
             try {
                 localVideo.start(new VideoPreviewOpParam());
-                onVideo(remoteVideo, "video_local");
+                onVideo(localVideo.getVideoWindow(), "video_local");
             } catch (Exception ignored) {
             }
         }
     }
 
-    private void mediaAudio(CallMediaInfo cmi) {
-
+    public void resetMediaVideo() {
+        if (localVideo != null) {
+            try {
+                localVideo.stop();
+                localVideo.delete();
+            } catch (Exception ignored) {
+            }
+        }
+        localVideo = null;
+        remoteVideo = null;
     }
 
-    public void call(String destinationUser, boolean isVideo) {
+    private void mediaAudio(int medIdx) {
+        try {
+            AudioMedia am = getAudioMedia(medIdx);
+            manager.getSettingSip().configureAudio(am);
+        } catch (Exception ignored) {
+        }
+    }
+
+    public void createCall(String destinationUser, boolean isVideo) {
+        resetMediaVideo();
         String sipUri = "sip:" + destinationUser + "@" + manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT();
         CallOpParam callOpParam = new CallOpParam();
         callOpParam.getOpt().setAudioCount(1);
         callOpParam.getOpt().setVideoCount(isVideo ? 1 : 0);
+        callOpParam.getOpt().setReqKeyframeMethod(pjsua_vid_req_keyframe_method.PJSUA_VID_REQ_KEYFRAME_RTCP_PLI);
         try {
             makeCall(sipUri, callOpParam);
             onCall(CallSip.this, "call_makecall");
@@ -183,9 +222,9 @@ public class CallSip extends Call {
         manager.onCall(call, status);
     }
 
-    private void onVideo(VideoWindow localVideoWindow, String status) {
+    private void onVideo(VideoWindow videoWindow, String status) {
         if (manager == null) return;
-        manager.onSipVideo(localVideoWindow, status);
+        manager.onSipVideo(videoWindow, status);
     }
 
     public CallInfo getCallInfo() {
