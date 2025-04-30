@@ -46,10 +46,6 @@ public class AccountSip extends Account {
         this.password = password;
     }
 
-    public void reRegister() {
-        register(displayName, username, password, true);
-    }
-
     public void register(String displayName, String username, String password, boolean registration) {
         setAuth(displayName, username, password);
         this.registration = registration;
@@ -91,7 +87,7 @@ public class AccountSip extends Account {
         return accCfg;
     }
 
-    private void accountInfo() {
+    public void accountInfo() {
         try {
             AccountInfo accInfo = getInfo();
             if (accInfo.getRegStatus() == pjsip_status_code.PJSIP_SC_TRYING) {
@@ -136,7 +132,7 @@ public class AccountSip extends Account {
         if (call != null) call.delete();
         call = new CallSip(context, manager, prm.getCallId());
         try {
-            String stat_video = call.getInfo().getRemVideoCount() == 1 ? "video" : "audio";
+            String stat_video = (call.getInfo().getRemOfferer() && call.getInfo().getRemVideoCount() > 0) ? "video" : "audio";
             manager.onCall(call, "call_incoming_" + stat_video);
         } catch (Exception ignored) {
             manager.onCall(call, "call_incoming_voice");

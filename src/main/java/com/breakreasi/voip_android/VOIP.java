@@ -50,7 +50,9 @@ public class VOIP implements SipManagerCallback {
         cm = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
         am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationCall = new NotificationCall(context, this);
+        if (notificationCall == null) {
+            notificationCall = new NotificationCall(context, this);
+        }
         if (this.type == VOIPType.SIP
         && sip == null) {
             sip = new SipManager(context, cm, am);
@@ -84,13 +86,13 @@ public class VOIP implements SipManagerCallback {
 
     public void accept() {
         if (this.type == VOIPType.SIP) {
-            sip.getCall().accept();
+            sip.accept();
         }
     }
 
     public void hangup() {
         if (this.type == VOIPType.SIP) {
-            sip.getCall().decline();
+            sip.decline();
         }
     }
 
@@ -187,7 +189,9 @@ public class VOIP implements SipManagerCallback {
             }
             if (status.contains("disconnected")) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    getNotification().cancelNotify();
+                    if (br != null) {
+                        getNotification().cancelNotify();
+                    }
                 }
             }
         });

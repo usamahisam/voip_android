@@ -118,7 +118,11 @@ public class SipManager {
         this.displayName = displayName;
         this.username = username;
         this.password = password;
-        account.register(displayName, username, password, registration);
+        if (getLogin()) {
+            account.accountInfo();
+        } else {
+            account.register(displayName, username, password, registration);
+        }
     }
 
     public CallSip initCall() {
@@ -127,10 +131,32 @@ public class SipManager {
     }
 
     public void makeCall(String callTo, boolean callIsVideo) {
-        authSessionFor = "makeCall";
         this.callTo = callTo;
         this.callIsVideo = callIsVideo;
-        account.register(displayName, username, password, true);
+        if (account.getLogin()) {
+            this.call = initCall();
+            this.call.createCall(callTo, callIsVideo);
+            authSessionFor = "";
+        } else {
+            authSessionFor = "makeCall";
+            account.register(displayName, username, password, true);
+        }
+    }
+
+    public void accept() {
+        if (getCall() == null) {
+            onCall(null, "call_disconnected");
+            return;
+        }
+        getCall().accept();
+    }
+
+    public void decline() {
+        if (getCall() == null) {
+            onCall(null, "call_disconnected");
+            return;
+        }
+        getCall().decline();
     }
 
     public CallSip getCall() {
@@ -152,7 +178,8 @@ public class SipManager {
     public void onAccountSipStatus(AccountInfo accountInfo, String status) {
         if (status.equals("success")) {
             if (authSessionFor.equals("makeCall")) {
-                initCall().createCall(callTo, callIsVideo);
+                this.call = initCall();
+                this.call.createCall(callTo, callIsVideo);
                 authSessionFor = "";
             }
         }
@@ -188,7 +215,7 @@ public class SipManager {
                 SurfaceUtil.surfaceToTop(getVideo().getLocalVideo());
                 getVideo().getLocalVideoHandler().setVideoWindow(videoWindow);
 //                SurfaceUtil.resizeSurface(getVideo().getLocalVideo(), videoWindow, false);
-                SurfaceUtil.resizeSurface(getVideo().getLocalVideo(), getConfig().getSIP_VIDEO_WIDTH(), getConfig().getSIP_VIDEO_HEIGHT(), false);
+//                SurfaceUtil.resizeSurface(getVideo().getLocalVideo(), getConfig().getSIP_VIDEO_WIDTH(), getConfig().getSIP_VIDEO_HEIGHT(), false);
             }
         } else if (status.equals("video_remote")) {
             if (getVideo().getRemoteVideoHandler() != null) {
