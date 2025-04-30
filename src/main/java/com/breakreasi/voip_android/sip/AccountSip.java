@@ -11,6 +11,9 @@ import org.pjsip.pjsua2.AuthCredInfoVector;
 import org.pjsip.pjsua2.OnIncomingCallParam;
 import org.pjsip.pjsua2.OnRegStartedParam;
 import org.pjsip.pjsua2.OnRegStateParam;
+import org.pjsip.pjsua2.pj_constants_;
+import org.pjsip.pjsua2.pj_qos_type;
+import org.pjsip.pjsua2.pjmedia_srtp_use;
 import org.pjsip.pjsua2.pjsip_status_code;
 
 import java.util.Objects;
@@ -58,18 +61,20 @@ public class AccountSip extends Account {
         accCfg = new AccountConfig();
         accCfg.setIdUri("\"" + displayName + "\" <sip:" + username + "@" + manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT() + ">");
         accCfg.getSipConfig().setAuthCreds(credArray);
-        accCfg.getSipConfig().getProxies().clear();
+//        accCfg.getSipConfig().getProxies().clear();
 //        accCfg.getSipConfig().getProxies().add("sip:"+manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT() + ";transport=UDP;port=" + manager.getConfig().getSIP_PORT());
 //        accCfg.getSipConfig().getProxies().add("sip:"+manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT() + ";transport=TCP;port=" + manager.getConfig().getSIP_PORT());
         accCfg.getRegConfig().setRegistrarUri("sip:" + manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT());
         accCfg.getRegConfig().setRegisterOnAdd(true);
         accCfg.getRegConfig().setDropCallsOnFail(true);
+        accCfg.getNatConfig().setSdpNatRewriteUse(pj_constants_.PJ_TRUE);
+        accCfg.getNatConfig().setViaRewriteUse(pj_constants_.PJ_TRUE);
         accCfg.getVideoConfig().setAutoTransmitOutgoing(true);
         accCfg.getVideoConfig().setAutoShowIncoming(true);
-        accCfg.getVideoConfig().setRateControlMethod(0);
-        accCfg.getVideoConfig().setRateControlBandwidth(0);
-        accCfg.getMediaConfig().setEnableLoopback(false);
-        accCfg.getMediaConfig().setRtcpMuxEnabled(true);
+        accCfg.getMediaConfig().getTransportConfig().setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
+        accCfg.getMediaConfig().setSrtpUse(pjmedia_srtp_use.PJMEDIA_SRTP_OPTIONAL);
+        accCfg.getMediaConfig().setSrtpSecureSignaling(0);
+        accCfg.getCallConfig().setTimerSessExpiresSec(300);
 
         manager.getSettingSip().configureCamera();
         int capDev = accCfg.getVideoConfig().getDefaultCaptureDevice();

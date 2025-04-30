@@ -25,7 +25,9 @@ public class SurfaceUtil {
             if (forceWidth) {
                 lp.width = (int) (lp.height * videoRatio);
             } else {
-                lp.height = (int) (lp.width * videoRatio);
+//                lp.height = (int) (lp.width * videoRatio);
+                lp.width = (int) videoWidth;
+                lp.height = (int) videoHeight;
             }
             surfaceView.setLayoutParams(lp);
             surfaceView.invalidate();

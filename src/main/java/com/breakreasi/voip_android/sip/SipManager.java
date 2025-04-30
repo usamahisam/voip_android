@@ -41,11 +41,11 @@ public class SipManager {
         this.cm = cm;
         this.am = am;
         callbacks = new ArrayList<>();
-        initConfig();
+        initStart();
         initEngine();
     }
 
-    public void initConfig() {
+    public void initStart() {
         config = new SipConfig();
         videoStream = new SipVideo(this);
     }
@@ -73,6 +73,7 @@ public class SipManager {
                     Build.MODEL,
                     Build.VERSION.RELEASE
             ));
+            epConfig.getMedConfig().setQuality(10);
             endpoint.libInit(epConfig);
 
             TransportConfig transportConfig = new TransportConfig();
@@ -174,6 +175,7 @@ public class SipManager {
         }
         if (status.contains("disconnected")) {
             setting.setAudioNormal();
+            this.call = null;
         }
         for (SipManagerCallback callback : callbacks) {
             callback.onSipCall(call, status);
@@ -183,18 +185,16 @@ public class SipManager {
     public void onSipVideo(VideoWindow videoWindow, String status) {
         if (status.equals("video_local")) {
             if (getVideo().getLocalVideoHandler() != null) {
-                Log.d("xcodex AAAA", "local");
                 SurfaceUtil.surfaceToTop(getVideo().getLocalVideo());
-                getVideo().getLocalVideoHandler().resetVideoWindow();
                 getVideo().getLocalVideoHandler().setVideoWindow(videoWindow);
+//                SurfaceUtil.resizeSurface(getVideo().getLocalVideo(), videoWindow, false);
+                SurfaceUtil.resizeSurface(getVideo().getLocalVideo(), getConfig().getSIP_VIDEO_WIDTH(), getConfig().getSIP_VIDEO_HEIGHT(), false);
             }
         } else if (status.equals("video_remote")) {
             if (getVideo().getRemoteVideoHandler() != null) {
-                Log.d("xcodex AAAA", "remote");
                 SurfaceUtil.surfaceToBottom(getVideo().getRemoteVideo());
-                SurfaceUtil.resizeSurface(getVideo().getRemoteVideo(), videoWindow, true);
-                getVideo().getRemoteVideoHandler().resetVideoWindow();
                 getVideo().getRemoteVideoHandler().setVideoWindow(videoWindow);
+                SurfaceUtil.resizeSurface(getVideo().getRemoteVideo(), videoWindow, true);
             }
         }
         for (SipManagerCallback callback : callbacks) {

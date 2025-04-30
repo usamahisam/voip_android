@@ -10,7 +10,7 @@ public class SipConfig {
     private String SIP_ACCOUNT_USERNAME = "100";
     private String SIP_ACCOUNT_PASSWORD = "100";
     /**
-     * Resolution (QCIF 176x144, CIF 320x240, VGA 640x480, HD 1280x720, FHD 1920x1080)
+     * Resolution (QCIF 176x144, CIF 320x240, VGA 640x480, XGA 1024x768, HD 1280x720, FHD 1920x1080)
      */
     private long SIP_VIDEO_WIDTH = 480;
     private long SIP_VIDEO_HEIGHT = 640;
@@ -18,9 +18,9 @@ public class SipConfig {
      * Bitrate (128 kbps, 256 kbps, 512 kbps, 1024 kbps, 2048 kbps)
      */
     private long SIP_VIDEO_BITRATE_AVG = 512;
-    private long SIP_VIDEO_BITRATE_MAX = 1024;
+    private long SIP_VIDEO_BITRATE_MAX = 2048;
     /**
-     * Frame rate (5, 10, 15, 20, 25, 30)
+     * Frame rate (1, 5, 10, 15, 20, 25, 30)
      */
     private int SIP_VIDEO_FPS_DENUM = 1;
     private int SIP_VIDEO_FPS_NUM = 30;

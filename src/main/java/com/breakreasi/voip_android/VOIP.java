@@ -1,8 +1,13 @@
 package com.breakreasi.voip_android;
 
+import android.app.NotificationManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.hardware.camera2.CameraManager;
 import android.media.AudioManager;
+import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.SurfaceView;
 
 import androidx.annotation.Nullable;
@@ -26,8 +31,10 @@ public class VOIP implements SipManagerCallback {
     private List<VOIPCallback> callbacks;
     private CameraManager cm;
     private AudioManager am;
+    private NotificationManager nm;
     private SipManager sip;
     private NotificationCall notificationCall;
+    private Class<? extends BroadcastReceiver> br;
 
     public VOIP(Context context) {
         this.context = context;
@@ -42,6 +49,7 @@ public class VOIP implements SipManagerCallback {
         setType(type);
         cm = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
         am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+        nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         notificationCall = new NotificationCall(context, this);
         if (this.type == VOIPType.SIP
         && sip == null) {
@@ -52,7 +60,10 @@ public class VOIP implements SipManagerCallback {
 
     public AudioManager getAudioManager() {
         return am;
+    }
 
+    public NotificationManager getNotificationManager() {
+        return nm;
     }
 
     public NotificationCall getNotification() {
@@ -165,9 +176,28 @@ public class VOIP implements SipManagerCallback {
     }
 
     public void notifyCallbacks(String status) {
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(() -> {
+            if (status.contains("incoming")) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    if (br != null) {
+                        getNotification().notifyCall(br);
+                    }
+                }
+            }
+            if (status.contains("disconnected")) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    getNotification().cancelNotify();
+                }
+            }
+        });
         for (VOIPCallback callback : new ArrayList<>(callbacks)) {
             callback.onStatus(status);
         }
+    }
+
+    public void setBroadcastNotification(Class<? extends BroadcastReceiver> br) {
+        this.br = br;
     }
 
     @Override

@@ -1,7 +1,6 @@
 package com.breakreasi.voip_android.sip;
 
 import android.content.Context;
-import android.os.CountDownTimer;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
@@ -12,6 +11,7 @@ import org.pjsip.pjsua2.CallInfo;
 import org.pjsip.pjsua2.CallMediaInfo;
 import org.pjsip.pjsua2.CallMediaInfoVector;
 import org.pjsip.pjsua2.CallOpParam;
+import org.pjsip.pjsua2.MediaSize;
 import org.pjsip.pjsua2.OnCallMediaEventParam;
 import org.pjsip.pjsua2.OnCallMediaStateParam;
 import org.pjsip.pjsua2.OnCallStateParam;
@@ -23,6 +23,7 @@ import org.pjsip.pjsua2.pjmedia_type;
 import org.pjsip.pjsua2.pjsip_inv_state;
 import org.pjsip.pjsua2.pjsip_status_code;
 import org.pjsip.pjsua2.pjsua2;
+import org.pjsip.pjsua2.pjsua_call_flag;
 import org.pjsip.pjsua2.pjsua_call_media_status;
 import org.pjsip.pjsua2.pjsua_vid_req_keyframe_method;
 
@@ -40,14 +41,14 @@ public class CallSip extends Call {
         super(mManager.getAccount());
         context = cContext;
         manager = mManager;
-        resetMediaVideo();
+        resetMedia();
     }
 
     public CallSip(Context cContext, SipManager mManager, int callId) {
         super(mManager.getAccount(), callId);
         context = cContext;
         manager = mManager;
-        resetMediaVideo();
+        resetMedia();
     }
 
     @Override
@@ -67,7 +68,7 @@ public class CallSip extends Call {
 
     private void listeningCallInfo() {
         try {
-            CallInfo callInfo = getInfo();
+            CallInfo callInfo = getCallInfo();
             listeningCallStatus(callInfo);
             listeningCallMedia(callInfo);
         } catch (Exception ignored) {
@@ -79,7 +80,7 @@ public class CallSip extends Call {
         if (CALL_STATUS == callInfo.getState()) {
             return;
         }
-        String stat_video = (callInfo.getRemVideoCount() == 1) ? "video" : "audio";
+        String stat_video = (callInfo.getRemOfferer() && callInfo.getRemVideoCount() > 0) ? "video" : "audio";
         CALL_STATUS = callInfo.getState();
         if (CALL_STATUS == pjsip_inv_state.PJSIP_INV_STATE_CALLING) {
             onCall(this, "call_calling");
@@ -91,6 +92,7 @@ public class CallSip extends Call {
             onCall(this, "call_connected_" + stat_video);
         } else if (CALL_STATUS == pjsip_inv_state.PJSIP_INV_STATE_DISCONNECTED) {
             onCall(this, "call_disconnected " + callInfo.getLastReason());
+            resetMedia();
             delete();
         } else if (CALL_STATUS == pjsip_inv_state.PJSIP_INV_STATE_NULL) {
             onCall(this, "call_null");
@@ -120,7 +122,7 @@ public class CallSip extends Call {
         try {
             String displayName = "";
             String phone = "";
-            String stat_video = (getCallInfo().getRemVideoCount() == 1) ? "video" : "audio";
+            String stat_video = (getCallInfo().getRemOfferer() && getCallInfo().getRemVideoCount() > 0) ? "video" : "audio";
             String remoteUri = getCallInfo().getRemoteUri();
             Pattern pattern = Pattern.compile("\"?(.*?)\"?\\s*<sip:([^@>]+)@");
             Matcher matcher = pattern.matcher(remoteUri);
@@ -140,7 +142,7 @@ public class CallSip extends Call {
             onVideo(remoteVideo, "video_remote");
         }
         if (localVideo == null && (cmi.getDir() & pjmedia_dir.PJMEDIA_DIR_ENCODING) != 0) {
-            localVideo = new VideoPreview(cmi.getVideoCapDev());
+            localVideo = new VideoPreview(manager.getSettingSip().getIdCamera(SipCamera.FRONT));
             try {
                 localVideo.start(new VideoPreviewOpParam());
                 onVideo(localVideo.getVideoWindow(), "video_local");
@@ -169,12 +171,24 @@ public class CallSip extends Call {
         }
     }
 
-    public void createCall(String destinationUser, boolean isVideo) {
+    private void resetMediaAudio() {
+        manager.getSettingSip().stopAudioTransmit();
+    }
+
+    private void resetMedia() {
+        resetMediaAudio();
         resetMediaVideo();
+    }
+
+    public void createCall(String destinationUser, boolean isVideo) {
+        resetMedia();
         String sipUri = "sip:" + destinationUser + "@" + manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT();
         CallOpParam callOpParam = new CallOpParam();
         callOpParam.getOpt().setAudioCount(1);
         callOpParam.getOpt().setVideoCount(isVideo ? 1 : 0);
+        if (!isVideo) {
+            callOpParam.getOpt().setFlag(pjsua_call_flag.PJSUA_CALL_INCLUDE_DISABLED_MEDIA);
+        }
         callOpParam.getOpt().setReqKeyframeMethod(pjsua_vid_req_keyframe_method.PJSUA_VID_REQ_KEYFRAME_RTCP_PLI);
         try {
             makeCall(sipUri, callOpParam);
@@ -187,6 +201,16 @@ public class CallSip extends Call {
     public void accept() {
         CallOpParam callOpParam = new CallOpParam();
         callOpParam.setStatusCode(pjsip_status_code.PJSIP_SC_OK);
+        callOpParam.getOpt().setAudioCount(1);
+        try {
+            boolean isVideo = (getCallInfo().getRemOfferer() && getCallInfo().getRemVideoCount() > 0);
+            callOpParam.getOpt().setVideoCount(isVideo ? 1 : 0);
+            if (!isVideo) {
+                callOpParam.getOpt().setFlag(pjsua_call_flag.PJSUA_CALL_INCLUDE_DISABLED_MEDIA);
+            }
+        } catch (Exception ignored) {
+        }
+        callOpParam.getOpt().setReqKeyframeMethod(pjsua_vid_req_keyframe_method.PJSUA_VID_REQ_KEYFRAME_RTCP_PLI);
         try {
             answer(callOpParam);
             onCall(this, "call_answer");

@@ -30,7 +30,6 @@ public class NotificationCall {
 
     private Context context;
     private VOIP voip;
-    private NotificationManager notificationManager;
     private Ringtone ringtone;
 
     public NotificationCall(Context context, VOIP voip) {
@@ -40,12 +39,10 @@ public class NotificationCall {
 
     public void notificationChannel() {
         NotificationChannel channel = null;
-        NotificationManager mNotificationManager = null;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             channel = new NotificationChannel(CHANNEL_ID, "Call Notifications", NotificationManager.IMPORTANCE_HIGH);
-            mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-            if (mNotificationManager != null) {
-                mNotificationManager.createNotificationChannel(channel);
+            if (voip.getNotificationManager() != null) {
+                voip.getNotificationManager().createNotificationChannel(channel);
             }
         }
     }
@@ -105,16 +102,18 @@ public class NotificationCall {
         String title = "Panggilan " + (data.isVideo() ? "video" : "audio") + " masuk";
         String message = data.getDisplayName() + " - " + data.getPhone();
         boolean isVideoCall = data.isVideo();
-        notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.notify(NM_ID, buildNotifyCall(broadcastClass, title, message, isVideoCall));
+        if (voip.getNotificationManager() == null) {
+            return;
+        }
+        voip.getNotificationManager().notify(NM_ID, buildNotifyCall(broadcastClass, title, message, isVideoCall));
     }
 
     public void cancelNotify() {
         stopMediaPlayer();
-        if (notificationManager == null) {
+        if (voip.getNotificationManager() == null) {
             return;
         }
-        notificationManager.cancel(NM_ID);
+        voip.getNotificationManager().cancel(NM_ID);
     }
 
     private void toneDial() {
