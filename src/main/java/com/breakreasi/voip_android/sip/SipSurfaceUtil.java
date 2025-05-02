@@ -6,7 +6,7 @@ import android.view.ViewGroup;
 import org.pjsip.pjsua2.VideoWindow;
 import org.pjsip.pjsua2.VideoWindowInfo;
 
-public class SurfaceUtil {
+public class SipSurfaceUtil {
     public static void resizeSurface(SurfaceView surfaceView, VideoWindow videoWindow, boolean forceWidth) {
         try {
             VideoWindowInfo vwi = videoWindow.getInfo();

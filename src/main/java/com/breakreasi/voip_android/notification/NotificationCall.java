@@ -19,8 +19,8 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.graphics.drawable.IconCompat;
 
 import com.breakreasi.voip_android.R;
-import com.breakreasi.voip_android.VOIP;
-import com.breakreasi.voip_android.VOIPCallData;
+import com.breakreasi.voip_android.voip.VOIP;
+import com.breakreasi.voip_android.voip.VOIPCallData;
 
 import java.util.Calendar;
 

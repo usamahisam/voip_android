@@ -4,8 +4,6 @@ import android.content.Context;
 import android.hardware.camera2.CameraManager;
 import android.media.AudioManager;
 import android.os.Build;
-import android.os.CountDownTimer;
-import android.util.Log;
 
 import org.pjsip.PjCameraInfo2;
 import org.pjsip.pjsua2.AccountInfo;
@@ -25,12 +23,12 @@ public class SipManager {
     private SipVideo videoStream;
     private Endpoint endpoint;
     private EpConfig epConfig;
-    private AccountSip account;
-    private SettingSip setting;
+    private SipAccount account;
+    private SipSetting setting;
     private String displayName;
     private String username;
     private String password;
-    private CallSip call;
+    private SipCall call;
     private String authSessionFor;
     private String callTo;
     private boolean callIsVideo;
@@ -89,15 +87,15 @@ public class SipManager {
     }
 
     private void init() {
-        setting = new SettingSip(this);
-        account = new AccountSip(mContext, this);
+        setting = new SipSetting(this);
+        account = new SipAccount(mContext, this);
     }
 
-    public SettingSip getSettingSip() {
+    public SipSetting getSettingSip() {
         return setting;
     }
 
-    public AccountSip getAccountSip() {
+    public SipAccount getAccountSip() {
         return account;
     }
 
@@ -125,7 +123,7 @@ public class SipManager {
         }
     }
 
-    public CallSip initCall() {
+    public SipCall initCall() {
         call = account.initCall();
         return call;
     }
@@ -159,11 +157,11 @@ public class SipManager {
         getCall().decline();
     }
 
-    public CallSip getCall() {
+    public SipCall getCall() {
         return call;
     }
 
-    public AccountSip getAccount() {
+    public SipAccount getAccount() {
         return account;
     }
 
@@ -188,7 +186,7 @@ public class SipManager {
         }
     }
 
-    public void onCall(CallSip call, String status) {
+    public void onCall(SipCall call, String status) {
         if (status.contains("incoming")) {
             this.call = call;
         }
@@ -212,16 +210,16 @@ public class SipManager {
     public void onSipVideo(VideoWindow videoWindow, String status) {
         if (status.equals("video_local")) {
             if (getVideo().getLocalVideoHandler() != null) {
-                SurfaceUtil.surfaceToTop(getVideo().getLocalVideo());
+                SipSurfaceUtil.surfaceToTop(getVideo().getLocalVideo());
                 getVideo().getLocalVideoHandler().setVideoWindow(videoWindow);
 //                SurfaceUtil.resizeSurface(getVideo().getLocalVideo(), videoWindow, false);
 //                SurfaceUtil.resizeSurface(getVideo().getLocalVideo(), getConfig().getSIP_VIDEO_WIDTH(), getConfig().getSIP_VIDEO_HEIGHT(), false);
             }
         } else if (status.equals("video_remote")) {
             if (getVideo().getRemoteVideoHandler() != null) {
-                SurfaceUtil.surfaceToBottom(getVideo().getRemoteVideo());
+                SipSurfaceUtil.surfaceToBottom(getVideo().getRemoteVideo());
                 getVideo().getRemoteVideoHandler().setVideoWindow(videoWindow);
-                SurfaceUtil.resizeSurface(getVideo().getRemoteVideo(), videoWindow, true);
+                SipSurfaceUtil.resizeSurface(getVideo().getRemoteVideo(), videoWindow, true);
             }
         }
         for (SipManagerCallback callback : callbacks) {

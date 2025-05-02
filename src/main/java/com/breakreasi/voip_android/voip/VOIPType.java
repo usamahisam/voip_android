@@ -1,4 +1,4 @@
-package com.breakreasi.voip_android;
+package com.breakreasi.voip_android.voip;
 
 public enum VOIPType {
     SIP,

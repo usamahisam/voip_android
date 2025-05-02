@@ -1,4 +1,4 @@
-package com.breakreasi.voip_android;
+package com.breakreasi.voip_android.voip;
 
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
@@ -13,7 +13,7 @@ import android.view.SurfaceView;
 import androidx.annotation.Nullable;
 
 import com.breakreasi.voip_android.notification.NotificationCall;
-import com.breakreasi.voip_android.sip.CallSip;
+import com.breakreasi.voip_android.sip.SipCall;
 import com.breakreasi.voip_android.sip.SipCallData;
 import com.breakreasi.voip_android.sip.SipCamera;
 import com.breakreasi.voip_android.sip.SipManager;
@@ -210,7 +210,7 @@ public class VOIP implements SipManagerCallback {
     }
 
     @Override
-    public void onSipCall(CallSip call, String status) {
+    public void onSipCall(SipCall call, String status) {
         notifyCallbacks(status);
     }
 

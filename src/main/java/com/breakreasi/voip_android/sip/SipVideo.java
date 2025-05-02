@@ -5,7 +5,7 @@ import android.view.SurfaceView;
 public class SipVideo {
     private SipManager manager;
     private SurfaceView localVideo, remoteVideo;
-    private VideoSurfaceHandler localVideoHandler, remoteVideoHandler;
+    private SipVideoSurfaceHandler localVideoHandler, remoteVideoHandler;
 
     public SipVideo(SipManager manager) {
         this.manager = manager;
@@ -13,7 +13,7 @@ public class SipVideo {
 
     public void setLocalVideo(SurfaceView localVideo) {
         this.localVideo = localVideo;
-        this.localVideoHandler = new VideoSurfaceHandler(localVideo.getHolder());
+        this.localVideoHandler = new SipVideoSurfaceHandler(localVideo.getHolder());
         this.localVideo.getHolder().addCallback(this.localVideoHandler);
     }
 
@@ -21,7 +21,7 @@ public class SipVideo {
         return localVideo;
     }
 
-    public VideoSurfaceHandler getLocalVideoHandler() {
+    public SipVideoSurfaceHandler getLocalVideoHandler() {
         return localVideoHandler;
     }
 
@@ -32,7 +32,7 @@ public class SipVideo {
 
     public void setRemoteVideo(SurfaceView remoteVideo) {
         this.remoteVideo = remoteVideo;
-        this.remoteVideoHandler = new VideoSurfaceHandler(remoteVideo.getHolder());
+        this.remoteVideoHandler = new SipVideoSurfaceHandler(remoteVideo.getHolder());
         this.remoteVideo.getHolder().addCallback(this.remoteVideoHandler);
     }
 
@@ -40,7 +40,7 @@ public class SipVideo {
         return remoteVideo;
     }
 
-    public VideoSurfaceHandler getRemoteVideoHandler() {
+    public SipVideoSurfaceHandler getRemoteVideoHandler() {
         return remoteVideoHandler;
     }
 

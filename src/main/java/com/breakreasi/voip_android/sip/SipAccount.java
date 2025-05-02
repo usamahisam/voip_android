@@ -18,18 +18,18 @@ import org.pjsip.pjsua2.pjsip_status_code;
 
 import java.util.Objects;
 
-public class AccountSip extends Account {
+public class SipAccount extends Account {
     private Context context;
     private SipManager manager;
     private AccountConfig accCfg;
-    private CallSip call;
+    private SipCall call;
     public String displayName;
     public String username;
     public String password;
     public boolean registration;
     public boolean isLogin;
 
-    public AccountSip(Context mContext, SipManager mManager) {
+    public SipAccount(Context mContext, SipManager mManager) {
         context = mContext;
         manager = mManager;
         isLogin = false;
@@ -113,14 +113,14 @@ public class AccountSip extends Account {
         return isLogin;
     }
 
-    public CallSip initCall() {
+    public SipCall initCall() {
         if (call != null) call.delete();
-        call = new CallSip(context, manager);
+        call = new SipCall(context, manager);
         manager.onCall(call, "initialize");
         return call;
     }
 
-    public CallSip getCall() {
+    public SipCall getCall() {
         return call;
     }
 
@@ -128,7 +128,7 @@ public class AccountSip extends Account {
     public void onIncomingCall(OnIncomingCallParam prm) {
         super.onIncomingCall(prm);
         if (call != null) call.delete();
-        call = new CallSip(context, manager, prm.getCallId());
+        call = new SipCall(context, manager, prm.getCallId());
         try {
             String stat_video = (call.getInfo().getRemOfferer() && call.getInfo().getRemVideoCount() > 0) ? "video" : "audio";
             manager.onCall(call, "call_incoming_" + stat_video);

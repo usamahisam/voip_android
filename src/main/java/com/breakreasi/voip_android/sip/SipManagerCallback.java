@@ -5,6 +5,6 @@ import org.pjsip.pjsua2.VideoWindow;
 
 public interface SipManagerCallback {
     void onSipAccountInfo(AccountInfo accountInfo, String status);
-    void onSipCall(CallSip call, String status);
+    void onSipCall(SipCall call, String status);
     void onSipVideo(VideoWindow videoWindow, String status);
 }

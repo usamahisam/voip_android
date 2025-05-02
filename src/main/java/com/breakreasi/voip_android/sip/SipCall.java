@@ -30,21 +30,21 @@ import org.pjsip.pjsua2.pjsua_vid_req_keyframe_method;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class CallSip extends Call {
+public class SipCall extends Call {
     private Context context;
     private SipManager manager;
     private int CALL_STATUS;
     private VideoWindow remoteVideo;
     private VideoPreview localVideo;
 
-    public CallSip(Context cContext, SipManager mManager) {
+    public SipCall(Context cContext, SipManager mManager) {
         super(mManager.getAccount());
         context = cContext;
         manager = mManager;
         resetMedia();
     }
 
-    public CallSip(Context cContext, SipManager mManager, int callId) {
+    public SipCall(Context cContext, SipManager mManager, int callId) {
         super(mManager.getAccount(), callId);
         context = cContext;
         manager = mManager;
@@ -192,9 +192,9 @@ public class CallSip extends Call {
         callOpParam.getOpt().setReqKeyframeMethod(pjsua_vid_req_keyframe_method.PJSUA_VID_REQ_KEYFRAME_RTCP_PLI);
         try {
             makeCall(sipUri, callOpParam);
-            onCall(CallSip.this, "call_makecall");
+            onCall(SipCall.this, "call_makecall");
         } catch (Exception e) {
-            onCall(CallSip.this, "call_makecall_error");
+            onCall(SipCall.this, "call_makecall_error");
         }
     }
 
@@ -241,7 +241,7 @@ public class CallSip extends Call {
         }
     }
 
-    private void onCall(CallSip call, String status) {
+    private void onCall(SipCall call, String status) {
         if (manager == null) return;
         manager.onCall(call, status);
     }

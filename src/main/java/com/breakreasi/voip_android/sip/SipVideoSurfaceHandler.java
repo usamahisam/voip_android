@@ -1,18 +1,17 @@
 package com.breakreasi.voip_android.sip;
 
-import android.util.Log;
 import android.view.SurfaceHolder;
 import androidx.annotation.NonNull;
 import org.pjsip.pjsua2.VideoWindow;
 import org.pjsip.pjsua2.VideoWindowHandle;
 
-public class VideoSurfaceHandler implements SurfaceHolder.Callback {
+public class SipVideoSurfaceHandler implements SurfaceHolder.Callback {
 
     private final SurfaceHolder holder;
     private VideoWindow videoWindow = null;
     private boolean active = false;
 
-    public VideoSurfaceHandler(SurfaceHolder holder_) {
+    public SipVideoSurfaceHandler(SurfaceHolder holder_) {
         this.holder = holder_;
     }
 

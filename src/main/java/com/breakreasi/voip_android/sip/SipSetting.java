@@ -1,12 +1,10 @@
 package com.breakreasi.voip_android.sip;
 
 import android.media.AudioManager;
-import android.util.Log;
 
 import org.pjsip.pjsua2.AudDevManager;
 import org.pjsip.pjsua2.AudioMedia;
 import org.pjsip.pjsua2.CallVidSetStreamParam;
-import org.pjsip.pjsua2.CodecFmtp;
 import org.pjsip.pjsua2.CodecFmtpVector;
 import org.pjsip.pjsua2.CodecInfo;
 import org.pjsip.pjsua2.CodecInfoVector2;
@@ -20,9 +18,7 @@ import org.pjsip.pjsua2.pjmedia_aud_dev_route;
 import org.pjsip.pjsua2.pjmedia_orient;
 import org.pjsip.pjsua2.pjsua_call_vid_strm_op;
 
-import java.util.Map;
-
-public class SettingSip {
+public class SipSetting {
     private SipManager sipManager;
     private Endpoint endpoint;
     private AudioMedia audioMedia;
@@ -30,7 +26,7 @@ public class SettingSip {
     private int backCamera = 1;
     private SipCamera sipCamera;
 
-    public SettingSip(SipManager sipManager) {
+    public SipSetting(SipManager sipManager) {
         this.sipManager = sipManager;
         endpoint = sipManager.getEndpoint();
         init();
