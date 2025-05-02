@@ -206,6 +206,7 @@ public class VOIP implements SipManagerCallback {
 
     @Override
     public void onSipAccountInfo(AccountInfo accountInfo, String status) {
+        notifyCallbacks("account_" + status);
     }
 
     @Override
