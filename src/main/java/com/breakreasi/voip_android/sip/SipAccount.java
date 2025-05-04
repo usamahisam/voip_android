@@ -67,8 +67,8 @@ public class SipAccount extends Account {
         accCfg.getVideoConfig().setDefaultRenderDevice(0);
         accCfg.getVideoConfig().setAutoTransmitOutgoing(true);
         accCfg.getVideoConfig().setAutoShowIncoming(true);
-        accCfg.getNatConfig().setSdpNatRewriteUse(pj_constants_.PJ_TRUE);
-        accCfg.getNatConfig().setViaRewriteUse(pj_constants_.PJ_TRUE);
+//        accCfg.getNatConfig().setSdpNatRewriteUse(pj_constants_.PJ_TRUE);
+//        accCfg.getNatConfig().setViaRewriteUse(pj_constants_.PJ_TRUE);
         accCfg.getMediaConfig().setSrtpUse(pjmedia_srtp_use.PJMEDIA_SRTP_OPTIONAL);
         accCfg.getMediaConfig().setSrtpSecureSignaling(0);
         accCfg.getCallConfig().setTimerSessExpiresSec(300);
