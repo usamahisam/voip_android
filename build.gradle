@@ -4,10 +4,20 @@ plugins {
 
 android {
     namespace 'com.breakreasi.voip_android'
-    compileSdk 34
+    compileSdk 35
 
     defaultConfig {
         minSdk 23
+
+        ndk {
+            moduleName "libpjsua2"
+        }
+
+        externalNativeBuild {
+            cmake {
+                arguments "-DANDROID_STL=c++_shared"
+            }
+        }
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -28,11 +38,5 @@ android {
 
 dependencies {
     implementation(libs.material)
-    implementation(project(":pjsua2"))
-    implementation libs.full.rtc.basic
-    implementation libs.full.ains
-    implementation libs.full.jnd
-    implementation libs.full.full.audio.format
-    implementation libs.full.super.resolution
 }
 

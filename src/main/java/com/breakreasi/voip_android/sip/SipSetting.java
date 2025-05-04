@@ -184,11 +184,14 @@ public class SipSetting {
             CodecInfoVector2 codecs = endpoint.codecEnum2();
             for (CodecInfo codec : codecs) {
                 String codecId = codec.getCodecId();
-                if (codecId.startsWith("G729")
-                        || codecId.startsWith("PCMA")
-                        || codecId.startsWith("PCMU")
-                        || codecId.startsWith("opus")) {
+                if (codecId.startsWith("G729")) {
                     endpoint.codecSetPriority(codecId, (short) 254);
+                } else if (codecId.startsWith("opus")) {
+                    endpoint.codecSetPriority(codecId, (short) 240);
+                } else if (codecId.startsWith("PCMA")) {
+                    endpoint.codecSetPriority(codecId, (short) 235);
+                } else if (codecId.startsWith("PCMU")) {
+                    endpoint.codecSetPriority(codecId, (short) 230);
                 } else {
                     endpoint.codecSetPriority(codecId, (short) 0);
                 }
@@ -208,12 +211,12 @@ public class SipSetting {
                 } else if (codecId.contains("H264/99")) {
                     endpoint.videoCodecSetPriority(codecId, (short) 127);
                     setVideoCodecParam(codecId, endpoint.getVideoCodecParam(codecId));
-                } else if (codecId.contains("VP8")) {
-                    endpoint.videoCodecSetPriority(codecId, (short) 126);
-                    setVideoCodecParam(codecId, endpoint.getVideoCodecParam(codecId));
-                } else if (codecId.contains("VP9")) {
-                    endpoint.videoCodecSetPriority(codecId, (short) 125);
-                    setVideoCodecParam(codecId, endpoint.getVideoCodecParam(codecId));
+//                } else if (codecId.contains("VP8")) {
+//                    endpoint.videoCodecSetPriority(codecId, (short) 126);
+//                    setVideoCodecParam(codecId, endpoint.getVideoCodecParam(codecId));
+//                } else if (codecId.contains("VP9")) {
+//                    endpoint.videoCodecSetPriority(codecId, (short) 125);
+//                    setVideoCodecParam(codecId, endpoint.getVideoCodecParam(codecId));
                 } else {
                     endpoint.videoCodecSetPriority(codecId, (short) 0);
                     setVideoCodecParam(codecId, endpoint.getVideoCodecParam(codecId));
@@ -228,36 +231,16 @@ public class SipSetting {
          getEncFmt() artinya format video untuk ENCODE (video yang kita kirim ke lawan bicara).
          getDecFmt() artinya format video untuk DECODE (video yang kita terima dari lawan bicara).
          */
-//        CodecFmtp fmtp = new CodecFmtp();
-//        fmtp.setName("packetization-mode");
-//        fmtp.setVal("1");
-//        param.getEncFmtp().set(0, fmtp);
-//        CodecFmtp fmtp2 = new CodecFmtp();
-//        fmtp2.setName("profile-level-id");
-//        fmtp2.setVal("42e01f");
-//        param.getEncFmtp().set(1, fmtp2);
-        // Set resolusi
-//        param.getEncFmt().setWidth(sipManager.getConfig().getSIP_VIDEO_WIDTH());
-//        param.getEncFmt().setHeight(sipManager.getConfig().getSIP_VIDEO_HEIGHT());
-//        // Set bitrate
-//        param.getEncFmt().setAvgBps(sipManager.getConfig().getSIP_VIDEO_BITRATE_AVG() * 1000);
-//        param.getEncFmt().setMaxBps(sipManager.getConfig().getSIP_VIDEO_BITRATE_MAX() * 1000);
-//        // Set frame rate
-//        param.getEncFmt().setFpsDenum(sipManager.getConfig().getSIP_VIDEO_FPS_DENUM());
-//        param.getEncFmt().setFpsNum(sipManager.getConfig().getSIP_VIDEO_FPS_NUM());
-//        try {
-//            endpoint.setVideoCodecParam(codecId, param);
-//        } catch (Exception ignored) {
-//        }
-        CodecFmtpVector codecFmtpVector = param.getDecFmtp();
         MediaFormatVideo mediaFormatVideo = param.getEncFmt();
         mediaFormatVideo.setWidth(sipManager.getConfig().getSIP_VIDEO_WIDTH());
         mediaFormatVideo.setHeight(sipManager.getConfig().getSIP_VIDEO_HEIGHT());
         mediaFormatVideo.setAvgBps(sipManager.getConfig().getSIP_VIDEO_BITRATE_AVG() * 1000);
         mediaFormatVideo.setMaxBps(sipManager.getConfig().getSIP_VIDEO_BITRATE_MAX() * 1000);
-        mediaFormatVideo.setFpsDenum(sipManager.getConfig().getSIP_VIDEO_FPS_DENUM());
-        mediaFormatVideo.setFpsNum(sipManager.getConfig().getSIP_VIDEO_FPS_NUM());
+//        mediaFormatVideo.setFpsDenum(sipManager.getConfig().getSIP_VIDEO_FPS_DENUM());
+//        mediaFormatVideo.setFpsNum(sipManager.getConfig().getSIP_VIDEO_FPS_NUM());
         param.setEncFmt(mediaFormatVideo);
+
+        CodecFmtpVector codecFmtpVector = param.getDecFmtp();
         for (int i = 0; i < codecFmtpVector.size(); i++) {
             if ("profile-level-id".equals(codecFmtpVector.get(i).getName())) {
                 // janus = 42e01f
@@ -267,6 +250,7 @@ public class SipSetting {
             }
         }
         param.setDecFmtp(codecFmtpVector);
+
         try {
             endpoint.setVideoCodecParam(codecId, param);
         } catch (Exception ignored) {

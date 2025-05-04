@@ -17,7 +17,7 @@ public class SipConfig {
     /**
      * Bitrate (128 kbps, 256 kbps, 512 kbps, 1024 kbps, 2048 kbps)
      */
-    private long SIP_VIDEO_BITRATE_AVG = 512;
+    private long SIP_VIDEO_BITRATE_AVG = 256;
     private long SIP_VIDEO_BITRATE_MAX = 2048;
     /**
      * Frame rate (1, 5, 10, 15, 20, 25, 30)

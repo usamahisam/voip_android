@@ -63,9 +63,12 @@ public class SipAccount extends Account {
         accCfg.getRegConfig().setRegistrarUri("sip:" + manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT());
         accCfg.getRegConfig().setRegisterOnAdd(true);
         accCfg.getRegConfig().setDropCallsOnFail(true);
+        accCfg.getVideoConfig().setDefaultCaptureDevice(1);
+        accCfg.getVideoConfig().setDefaultRenderDevice(0);
         accCfg.getVideoConfig().setAutoTransmitOutgoing(true);
         accCfg.getVideoConfig().setAutoShowIncoming(true);
-        accCfg.getMediaConfig().getTransportConfig().setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
+        accCfg.getNatConfig().setSdpNatRewriteUse(pj_constants_.PJ_TRUE);
+        accCfg.getNatConfig().setViaRewriteUse(pj_constants_.PJ_TRUE);
         accCfg.getMediaConfig().setSrtpUse(pjmedia_srtp_use.PJMEDIA_SRTP_OPTIONAL);
         accCfg.getMediaConfig().setSrtpSecureSignaling(0);
         accCfg.getCallConfig().setTimerSessExpiresSec(300);

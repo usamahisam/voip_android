@@ -11,6 +11,7 @@ import org.pjsip.pjsua2.Endpoint;
 import org.pjsip.pjsua2.EpConfig;
 import org.pjsip.pjsua2.TransportConfig;
 import org.pjsip.pjsua2.VideoWindow;
+import org.pjsip.pjsua2.pj_qos_type;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -71,13 +72,23 @@ public class SipManager {
                     Build.MODEL,
                     Build.VERSION.RELEASE
             ));
+            epConfig.getMedConfig().setHasIoqueue(true);
+            epConfig.getMedConfig().setClockRate(16000);
             epConfig.getMedConfig().setQuality(10);
+            epConfig.getMedConfig().setEcOptions(1);
+            epConfig.getMedConfig().setEcTailLen(200);
+            epConfig.getMedConfig().setThreadCnt(2);
             endpoint.libInit(epConfig);
 
-            TransportConfig transportConfig = new TransportConfig();
-            transportConfig.setPort(config.getSIP_PORT());
-            endpoint.transportCreate(config.getSIP_TRANSPORT_UDP(), transportConfig);
-            endpoint.transportCreate(config.getSIP_TRANSPORT_TCP(), transportConfig);
+            TransportConfig udpTransport = new TransportConfig();
+            udpTransport.setPort(config.getSIP_PORT());
+            TransportConfig tcpTransport = new TransportConfig();
+            tcpTransport.setPort(config.getSIP_PORT());
+            TransportConfig tlsTransport = new TransportConfig();
+
+            endpoint.transportCreate(config.getSIP_TRANSPORT_UDP(), udpTransport);
+            endpoint.transportCreate(config.getSIP_TRANSPORT_TCP(), tcpTransport);
+
             endpoint.libStart();
 
         } catch (Exception ignored) {
