@@ -234,8 +234,8 @@ public class SipSetting {
         MediaFormatVideo mediaFormatVideo = param.getEncFmt();
         mediaFormatVideo.setWidth(sipManager.getConfig().getSIP_VIDEO_WIDTH());
         mediaFormatVideo.setHeight(sipManager.getConfig().getSIP_VIDEO_HEIGHT());
-        mediaFormatVideo.setAvgBps(sipManager.getConfig().getSIP_VIDEO_BITRATE_AVG() * 1000);
-        mediaFormatVideo.setMaxBps(sipManager.getConfig().getSIP_VIDEO_BITRATE_MAX() * 1000);
+//        mediaFormatVideo.setAvgBps(sipManager.getConfig().getSIP_VIDEO_BITRATE_AVG() * 1000);
+//        mediaFormatVideo.setMaxBps(sipManager.getConfig().getSIP_VIDEO_BITRATE_MAX() * 1000);
 //        mediaFormatVideo.setFpsDenum(sipManager.getConfig().getSIP_VIDEO_FPS_DENUM());
 //        mediaFormatVideo.setFpsNum(sipManager.getConfig().getSIP_VIDEO_FPS_NUM());
         param.setEncFmt(mediaFormatVideo);
