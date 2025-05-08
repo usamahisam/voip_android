@@ -72,6 +72,7 @@ public class SipManager {
                     Build.MODEL,
                     Build.VERSION.RELEASE
             ));
+            epConfig.getUaConfig().getStunServer().add("stun:stun.l.google.com:19302");
             epConfig.getMedConfig().setHasIoqueue(true);
             epConfig.getMedConfig().setClockRate(16000);
             epConfig.getMedConfig().setQuality(10);

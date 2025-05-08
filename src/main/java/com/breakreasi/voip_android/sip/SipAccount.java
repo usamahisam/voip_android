@@ -57,9 +57,9 @@ public class SipAccount extends Account {
         accCfg = new AccountConfig();
         accCfg.setIdUri("\"" + displayName + "\" <sip:" + username + "@" + manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT() + ">");
         accCfg.getSipConfig().setAuthCreds(credArray);
-//        accCfg.getSipConfig().getProxies().clear();
-//        accCfg.getSipConfig().getProxies().add("sip:"+manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT() + ";transport=UDP;port=" + manager.getConfig().getSIP_PORT());
-//        accCfg.getSipConfig().getProxies().add("sip:"+manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT() + ";transport=TCP;port=" + manager.getConfig().getSIP_PORT());
+        accCfg.getSipConfig().getProxies().clear();
+        accCfg.getSipConfig().getProxies().add("sip:"+manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT() + ";transport=UDP;port=" + manager.getConfig().getSIP_PORT());
+        accCfg.getSipConfig().getProxies().add("sip:"+manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT() + ";transport=TCP;port=" + manager.getConfig().getSIP_PORT());
         accCfg.getRegConfig().setRegistrarUri("sip:" + manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT());
         accCfg.getRegConfig().setRegisterOnAdd(true);
         accCfg.getRegConfig().setDropCallsOnFail(true);
@@ -67,11 +67,18 @@ public class SipAccount extends Account {
         accCfg.getVideoConfig().setDefaultRenderDevice(0);
         accCfg.getVideoConfig().setAutoTransmitOutgoing(true);
         accCfg.getVideoConfig().setAutoShowIncoming(true);
-//        accCfg.getNatConfig().setSdpNatRewriteUse(pj_constants_.PJ_TRUE);
-//        accCfg.getNatConfig().setViaRewriteUse(pj_constants_.PJ_TRUE);
+        accCfg.getNatConfig().setSdpNatRewriteUse(pj_constants_.PJ_TRUE);
+        accCfg.getNatConfig().setViaRewriteUse(pj_constants_.PJ_TRUE);
+        accCfg.getNatConfig().setIceEnabled(false);
+        accCfg.getNatConfig().setTurnEnabled(false);
+        accCfg.getNatConfig().setSipStunUse(pj_constants_.PJ_TRUE);
+        accCfg.getNatConfig().setMediaStunUse(pj_constants_.PJ_TRUE);
         accCfg.getMediaConfig().setSrtpUse(pjmedia_srtp_use.PJMEDIA_SRTP_OPTIONAL);
         accCfg.getMediaConfig().setSrtpSecureSignaling(0);
+        accCfg.getMediaConfig().setRtcpMuxEnabled(true);
+        accCfg.getMediaConfig().setStreamKaEnabled(true);
         accCfg.getCallConfig().setTimerSessExpiresSec(300);
+        accCfg.getCallConfig().setTimerMinSESec(90);
 
         manager.getSettingSip().configureCamera();
         int capDev = accCfg.getVideoConfig().getDefaultCaptureDevice();

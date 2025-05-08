@@ -1,6 +1,7 @@
 package com.breakreasi.voip_android.sip;
 
 import android.media.AudioManager;
+import android.util.Log;
 
 import org.pjsip.pjsua2.AudDevManager;
 import org.pjsip.pjsua2.AudioMedia;
@@ -205,18 +206,19 @@ public class SipSetting {
             CodecInfoVector2 codecs = endpoint.videoCodecEnum2();
             for (CodecInfo codec : codecs) {
                 String codecId = codec.getCodecId();
+                Log.d("xcodex xvoipx Codecs Video", ">> " + codecId);
                 if (codecId.contains("H264/97")) {
                     endpoint.videoCodecSetPriority(codecId, (short) 128);
                     setVideoCodecParam(codecId, endpoint.getVideoCodecParam(codecId));
                 } else if (codecId.contains("H264/99")) {
                     endpoint.videoCodecSetPriority(codecId, (short) 127);
                     setVideoCodecParam(codecId, endpoint.getVideoCodecParam(codecId));
-//                } else if (codecId.contains("VP8")) {
-//                    endpoint.videoCodecSetPriority(codecId, (short) 126);
-//                    setVideoCodecParam(codecId, endpoint.getVideoCodecParam(codecId));
-//                } else if (codecId.contains("VP9")) {
-//                    endpoint.videoCodecSetPriority(codecId, (short) 125);
-//                    setVideoCodecParam(codecId, endpoint.getVideoCodecParam(codecId));
+                } else if (codecId.contains("VP8")) {
+                    endpoint.videoCodecSetPriority(codecId, (short) 93);
+                    setVideoCodecParam(codecId, endpoint.getVideoCodecParam(codecId));
+                } else if (codecId.contains("VP9")) {
+                    endpoint.videoCodecSetPriority(codecId, (short) 80);
+                    setVideoCodecParam(codecId, endpoint.getVideoCodecParam(codecId));
                 } else {
                     endpoint.videoCodecSetPriority(codecId, (short) 0);
                     setVideoCodecParam(codecId, endpoint.getVideoCodecParam(codecId));
