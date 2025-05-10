@@ -1,7 +1,7 @@
 package com.breakreasi.voip_android.sip;
 
 import android.content.Context;
-import android.util.Log;
+import android.view.Surface;
 
 import androidx.annotation.Nullable;
 
@@ -9,22 +9,27 @@ import org.pjsip.pjsua2.AudioMedia;
 import org.pjsip.pjsua2.Call;
 import org.pjsip.pjsua2.CallInfo;
 import org.pjsip.pjsua2.CallMediaInfo;
-import org.pjsip.pjsua2.CallMediaInfoVector;
 import org.pjsip.pjsua2.CallOpParam;
-import org.pjsip.pjsua2.MediaSize;
+import org.pjsip.pjsua2.CallVidSetStreamParam;
+import org.pjsip.pjsua2.Media;
+import org.pjsip.pjsua2.MediaFmtChangedEvent;
 import org.pjsip.pjsua2.OnCallMediaEventParam;
 import org.pjsip.pjsua2.OnCallMediaStateParam;
 import org.pjsip.pjsua2.OnCallStateParam;
 import org.pjsip.pjsua2.VideoPreview;
 import org.pjsip.pjsua2.VideoPreviewOpParam;
 import org.pjsip.pjsua2.VideoWindow;
+import org.pjsip.pjsua2.VideoWindowHandle;
 import org.pjsip.pjsua2.pjmedia_dir;
+import org.pjsip.pjsua2.pjmedia_event_type;
+import org.pjsip.pjsua2.pjmedia_rtcp_fb_type;
 import org.pjsip.pjsua2.pjmedia_type;
 import org.pjsip.pjsua2.pjsip_inv_state;
 import org.pjsip.pjsua2.pjsip_status_code;
 import org.pjsip.pjsua2.pjsua2;
 import org.pjsip.pjsua2.pjsua_call_flag;
 import org.pjsip.pjsua2.pjsua_call_media_status;
+import org.pjsip.pjsua2.pjsua_call_vid_strm_op;
 import org.pjsip.pjsua2.pjsua_vid_req_keyframe_method;
 
 import java.util.regex.Matcher;
@@ -36,19 +41,18 @@ public class SipCall extends Call {
     private int CALL_STATUS;
     private VideoWindow remoteVideo;
     private VideoPreview localVideo;
+    private SipIncomingVideo incomingVideoCallback;
 
     public SipCall(Context cContext, SipManager mManager) {
         super(mManager.getAccount());
         context = cContext;
         manager = mManager;
-        resetMedia();
     }
 
     public SipCall(Context cContext, SipManager mManager, int callId) {
         super(mManager.getAccount(), callId);
         context = cContext;
         manager = mManager;
-        resetMedia();
     }
 
     @Override
@@ -58,19 +62,65 @@ public class SipCall extends Call {
 
     @Override
     public void onCallMediaEvent(OnCallMediaEventParam prm) {
+        int evType = prm.getEv().getType();
+        switch (evType) {
+            case pjmedia_event_type.PJMEDIA_EVENT_FMT_CHANGED:
+                try {
+                    CallInfo callInfo = getInfo();
+                    CallMediaInfo mediaInfo = callInfo.getMedia().get((int)prm.getMedIdx());
+                    if (mediaInfo.getType() == pjmedia_type.PJMEDIA_TYPE_VIDEO &&
+                            mediaInfo.getDir() == pjmedia_dir.PJMEDIA_DIR_DECODING) {
+                        MediaFmtChangedEvent fmtEvent = prm.getEv().getData().getFmtChanged();
+                        int w = (int) fmtEvent.getNewWidth();
+                        int h = (int) fmtEvent.getNewHeight();
+                        if (incomingVideoCallback != null) {
+                            incomingVideoCallback.getSize(w, h);
+                        }
+                    }
+                } catch (Exception ignored) {
+                }
+                break;
+            case pjmedia_event_type.PJMEDIA_EVENT_RX_RTCP_FB:
+                if (prm.getEv().getData() != null &&
+                        prm.getEv().getData().getRtcpFb().getFbType() == pjmedia_rtcp_fb_type.PJMEDIA_RTCP_FB_NACK &&
+                        prm.getEv().getData().getRtcpFb().getIsParamLengthZero()
+                ) {
+                    sendKeyFrame();
+                }
+                break;
+        }
         listeningCallInfo();
     }
 
     @Override
     public void onCallMediaState(OnCallMediaStateParam prm) {
         listeningCallInfo();
+        try {
+            CallInfo info = getInfo();
+            String statVideo = "off";
+            for (int i = 0; i < info.getMedia().size(); i++) {
+                Media media = getMedia(i);
+                CallMediaInfo mediaInfo = info.getMedia().get(i);
+                if (mediaInfo.getType() == pjmedia_type.PJMEDIA_TYPE_AUDIO
+                        && media != null
+                        && mediaInfo.getStatus() == pjsua_call_media_status.PJSUA_CALL_MEDIA_ACTIVE) {
+                    mediaAudio(media);
+                } else if (mediaInfo.getType() == pjmedia_type.PJMEDIA_TYPE_VIDEO
+                        && mediaInfo.getStatus() == pjsua_call_media_status.PJSUA_CALL_MEDIA_ACTIVE
+                        && mediaInfo.getVideoIncomingWindowId() != pjsua2.INVALID_ID) {
+                    mediaVideo(mediaInfo);
+                    statVideo = "on";
+                }
+            }
+            onCall(this, "call_media_video_" + statVideo);
+        } catch (Exception ignored) {
+        }
     }
 
     private void listeningCallInfo() {
         try {
             CallInfo callInfo = getCallInfo();
             listeningCallStatus(callInfo);
-            listeningCallMedia(callInfo);
         } catch (Exception ignored) {
             onCall(this, "call_error");
         }
@@ -80,7 +130,6 @@ public class SipCall extends Call {
         if (CALL_STATUS == callInfo.getState()) {
             return;
         }
-        String stat_video = (callInfo.getRemOfferer() && callInfo.getRemVideoCount() > 0) ? "video" : "audio";
         CALL_STATUS = callInfo.getState();
         if (CALL_STATUS == pjsip_inv_state.PJSIP_INV_STATE_CALLING) {
             onCall(this, "call_calling");
@@ -89,31 +138,13 @@ public class SipCall extends Call {
         } else if (CALL_STATUS == pjsip_inv_state.PJSIP_INV_STATE_CONNECTING) {
             onCall(this, "call_connecting");
         } else if (CALL_STATUS == pjsip_inv_state.PJSIP_INV_STATE_CONFIRMED) {
-            onCall(this, "call_connected_" + stat_video);
+            onCall(this, "call_connected");
         } else if (CALL_STATUS == pjsip_inv_state.PJSIP_INV_STATE_DISCONNECTED) {
             onCall(this, "call_disconnected " + callInfo.getLastReason());
-            resetMedia();
+            stopVideoFeeds();
             delete();
         } else if (CALL_STATUS == pjsip_inv_state.PJSIP_INV_STATE_NULL) {
             onCall(this, "call_null");
-        }
-    }
-
-    private void listeningCallMedia(CallInfo callInfo) {
-        try {
-            CallMediaInfoVector cmiv = callInfo.getMedia();
-            for (int i = 0; i < cmiv.size(); i++) {
-                CallMediaInfo cmi = cmiv.get(i);
-                if (cmi.getStatus() == pjsua_call_media_status.PJSUA_CALL_MEDIA_ACTIVE) {
-                    if (cmi.getType() == pjmedia_type.PJMEDIA_TYPE_VIDEO) {
-                        mediaVideo(cmi);
-                    }
-                    if (cmi.getType() == pjmedia_type.PJMEDIA_TYPE_AUDIO) {
-                        mediaAudio(i);
-                    }
-                }
-            }
-        } catch (Exception ignored) {
         }
     }
 
@@ -122,7 +153,6 @@ public class SipCall extends Call {
         try {
             String displayName = "";
             String phone = "";
-            String stat_video = (getCallInfo().getRemOfferer() && getCallInfo().getRemVideoCount() > 0) ? "video" : "audio";
             String remoteUri = getCallInfo().getRemoteUri();
             Pattern pattern = Pattern.compile("\"?(.*?)\"?\\s*<sip:([^@>]+)@");
             Matcher matcher = pattern.matcher(remoteUri);
@@ -130,58 +160,89 @@ public class SipCall extends Call {
                 displayName = matcher.group(1);
                 phone = matcher.group(2);
             }
-            return new SipCallData(displayName, phone, stat_video.equals("video"));
+            return new SipCallData(displayName, phone);
         } catch (Exception ignored) {
             return null;
         }
     }
 
     private void mediaVideo(CallMediaInfo cmi) {
-        if (remoteVideo == null && cmi.getVideoIncomingWindowId() != pjsua2.INVALID_ID) {
-            remoteVideo = new VideoWindow(cmi.getVideoIncomingWindowId());
-            onVideo(remoteVideo, "video_remote");
+        if (remoteVideo != null) {
+            remoteVideo.delete();
         }
-        if (localVideo == null && (cmi.getDir() & pjmedia_dir.PJMEDIA_DIR_ENCODING) != 0) {
-            localVideo = new VideoPreview(manager.getSettingSip().getIdCamera(SipCamera.FRONT));
+        if (localVideo != null) {
+            localVideo.delete();
+        }
+        localVideo = new VideoPreview(manager.getSettingSip().getIdCamera(SipCamera.FRONT));
+        remoteVideo = new VideoWindow(cmi.getVideoIncomingWindowId());
+    }
+
+    private void stopVideoFeeds() {
+        stopIncomingVideoFeed();
+        stopPreviewVideoFeed();
+    }
+
+    public void setIncomingVideoCallback(SipIncomingVideo incomingVideoCallback) {
+        this.incomingVideoCallback = incomingVideoCallback;
+    }
+
+    public void setIncomingVideoFeed(Surface surface) {
+        if (remoteVideo != null) {
+            VideoWindowHandle videoWindowHandle = new VideoWindowHandle();
+            videoWindowHandle.getHandle().setWindow(surface);
             try {
-                localVideo.start(new VideoPreviewOpParam());
-                onVideo(localVideo.getVideoWindow(), "video_local");
+                remoteVideo.setWindow(videoWindowHandle);
+                int w = (int) remoteVideo.getInfo().getSize().getW();
+                int h = (int) remoteVideo.getInfo().getSize().getH();
+                if (incomingVideoCallback != null) {
+                    incomingVideoCallback.getSize(w, h);
+                }
             } catch (Exception ignored) {
             }
         }
     }
 
-    public void resetMediaVideo() {
+    public void startPreviewVideoFeed(Surface surface) {
+        if (localVideo != null) {
+            VideoWindowHandle videoWindowHandle = new VideoWindowHandle();
+            videoWindowHandle.getHandle().setWindow(surface);
+            VideoPreviewOpParam videoPreviewOpParam = new VideoPreviewOpParam();
+            videoPreviewOpParam.setWindow(videoWindowHandle);
+            try {
+                localVideo.start(videoPreviewOpParam);
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+    public void stopIncomingVideoFeed() {
+        if (remoteVideo != null) {
+            try {
+                remoteVideo.delete();
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+    public void stopPreviewVideoFeed() {
         if (localVideo != null) {
             try {
                 localVideo.stop();
-                localVideo.delete();
             } catch (Exception ignored) {
             }
         }
-        localVideo = null;
-        remoteVideo = null;
     }
 
-    private void mediaAudio(int medIdx) {
+    private void mediaAudio(Media media) {
+        AudioMedia audioMedia = AudioMedia.typecastFromMedia(media);
         try {
-            AudioMedia am = getAudioMedia(medIdx);
-            manager.getSettingSip().configureAudio(am);
+            manager.getSettingSip().configureAudio(audioMedia);
+            onCall(this, "call_media_audio");
         } catch (Exception ignored) {
         }
     }
 
-    private void resetMediaAudio() {
-        manager.getSettingSip().stopAudioTransmit();
-    }
-
-    private void resetMedia() {
-        resetMediaAudio();
-        resetMediaVideo();
-    }
-
     public void createCall(String destinationUser, boolean isVideo) {
-        resetMedia();
         String sipUri = "sip:" + destinationUser + "@" + manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT();
         CallOpParam callOpParam = new CallOpParam();
         callOpParam.getOpt().setAudioCount(1);
@@ -246,16 +307,18 @@ public class SipCall extends Call {
         manager.onCall(call, status);
     }
 
-    private void onVideo(VideoWindow videoWindow, String status) {
-        if (manager == null) return;
-        manager.onSipVideo(videoWindow, status);
-    }
-
     public CallInfo getCallInfo() {
         try {
             return getInfo();
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    private void sendKeyFrame() {
+        try {
+            vidSetStream(pjsua_call_vid_strm_op.PJSUA_CALL_VID_STRM_SEND_KEYFRAME, new CallVidSetStreamParam());
+        } catch (Exception ignored) {
         }
     }
 }

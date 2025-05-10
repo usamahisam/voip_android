@@ -3,12 +3,10 @@ package com.breakreasi.voip_android.sip;
 public class SipCallData {
     String displayName;
     String phone;
-    boolean isVideo;
 
-    public SipCallData(String displayName, String phone, boolean isVideo) {
+    public SipCallData(String displayName, String phone) {
         this.displayName = displayName;
         this.phone = phone;
-        this.isVideo = isVideo;
     }
 
     public String getDisplayName() {
@@ -17,9 +15,5 @@ public class SipCallData {
 
     public String getPhone() {
         return phone;
-    }
-
-    public boolean isVideo() {
-        return isVideo;
     }
 }

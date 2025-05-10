@@ -47,7 +47,7 @@ public class NotificationCall {
         }
     }
 
-    private Notification buildNotifyCall(Class<? extends BroadcastReceiver> broadcastClass, String title, String message, boolean isVideoCall) {
+    private Notification buildNotifyCall(Class<? extends BroadcastReceiver> broadcastClass, String title, String message) {
         notificationChannel();
         NotificationCompat.Builder notificationCompat = new NotificationCompat.Builder(context, CHANNEL_ID);
         notificationCompat.setContentTitle(title);
@@ -99,13 +99,12 @@ public class NotificationCall {
         if (data == null) {
             return;
         }
-        String title = "Panggilan " + (data.isVideo() ? "video" : "audio") + " masuk";
+        String title = "Panggilan masuk";
         String message = data.getDisplayName() + " - " + data.getPhone();
-        boolean isVideoCall = data.isVideo();
         if (voip.getNotificationManager() == null) {
             return;
         }
-        voip.getNotificationManager().notify(NM_ID, buildNotifyCall(broadcastClass, title, message, isVideoCall));
+        voip.getNotificationManager().notify(NM_ID, buildNotifyCall(broadcastClass, title, message));
     }
 
     public void cancelNotify() {

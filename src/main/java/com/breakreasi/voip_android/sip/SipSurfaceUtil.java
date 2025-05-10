@@ -1,34 +1,33 @@
 package com.breakreasi.voip_android.sip;
 
+import android.util.Log;
 import android.view.SurfaceView;
 import android.view.ViewGroup;
 
-import org.pjsip.pjsua2.VideoWindow;
-import org.pjsip.pjsua2.VideoWindowInfo;
-
 public class SipSurfaceUtil {
-    public static void resizeSurface(SurfaceView surfaceView, VideoWindow videoWindow, boolean forceWidth) {
-        try {
-            VideoWindowInfo vwi = videoWindow.getInfo();
-            int videoWidth = (int) vwi.getSize().getW();
-            int videoHeight = (int) vwi.getSize().getW();
-            resizeSurface(surfaceView, videoWidth, videoHeight, forceWidth);
-        } catch (Exception ignored) {
-        }
+
+    public static void resizeFixWidth(SurfaceView surfaceView, int videoWidth, int videoHeight) {
+        int fixedWidth = surfaceView.getContext().getResources().getDisplayMetrics().widthPixels;
+        surfaceView.post(() -> {
+            float aspectRatio = (float) videoHeight / videoWidth; // height per 1 width
+            int adjustedHeight = (int) (fixedWidth * aspectRatio);
+            ViewGroup.LayoutParams lp = surfaceView.getLayoutParams();
+            lp.width = fixedWidth;
+            lp.height = adjustedHeight;
+            surfaceView.setLayoutParams(lp);
+            surfaceView.invalidate();
+            surfaceView.requestLayout();
+        });
     }
 
-    public static void resizeSurface(SurfaceView surfaceView, float videoWidth, float videoHeight, boolean forceWidth) {
-        float videoRatio = (float) videoWidth / (float) videoHeight;
+    public static void resizeFixHeight(SurfaceView surfaceView, int videoWidth, int videoHeight) {
+        int fixedHeight = surfaceView.getContext().getResources().getDisplayMetrics().heightPixels;
         surfaceView.post(() -> {
+            float aspectRatio = (float) videoWidth / videoHeight; // width per 1 height
+            int adjustedWidth = (int) (fixedHeight * aspectRatio);
             ViewGroup.LayoutParams lp = surfaceView.getLayoutParams();
-//            float screenRatio = (float) lp.width / (float) lp.height;
-            if (forceWidth) {
-                lp.width = (int) (lp.height * videoRatio);
-            } else {
-//                lp.height = (int) (lp.width * videoRatio);
-                lp.width = (int) videoWidth;
-                lp.height = (int) videoHeight;
-            }
+            lp.width = adjustedWidth;
+            lp.height = fixedHeight;
             surfaceView.setLayoutParams(lp);
             surfaceView.invalidate();
             surfaceView.requestLayout();

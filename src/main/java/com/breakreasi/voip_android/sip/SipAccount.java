@@ -59,7 +59,6 @@ public class SipAccount extends Account {
         accCfg.getSipConfig().setAuthCreds(credArray);
         accCfg.getSipConfig().getProxies().clear();
         accCfg.getSipConfig().getProxies().add("sip:"+manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT() + ";transport=UDP;port=" + manager.getConfig().getSIP_PORT());
-        accCfg.getSipConfig().getProxies().add("sip:"+manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT() + ";transport=TCP;port=" + manager.getConfig().getSIP_PORT());
         accCfg.getRegConfig().setRegistrarUri("sip:" + manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT());
         accCfg.getRegConfig().setRegisterOnAdd(true);
         accCfg.getRegConfig().setDropCallsOnFail(true);

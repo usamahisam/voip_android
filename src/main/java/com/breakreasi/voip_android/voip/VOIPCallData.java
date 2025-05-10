@@ -3,12 +3,10 @@ package com.breakreasi.voip_android.voip;
 public class VOIPCallData {
     String displayName;
     String phone;
-    boolean isVideo;
 
-    public VOIPCallData(String displayName, String phone, boolean isVideo) {
+    public VOIPCallData(String displayName, String phone) {
         this.displayName = displayName;
         this.phone = phone;
-        this.isVideo = isVideo;
     }
 
     public String getDisplayName() {
@@ -17,9 +15,5 @@ public class VOIPCallData {
 
     public String getPhone() {
         return phone;
-    }
-
-    public boolean isVideo() {
-        return isVideo;
     }
 }

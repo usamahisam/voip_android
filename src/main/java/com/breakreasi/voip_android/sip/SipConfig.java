@@ -18,11 +18,11 @@ public class SipConfig {
      * Bitrate (128 kbps, 256 kbps, 512 kbps, 1024 kbps, 2048 kbps)
      */
     private long SIP_VIDEO_BITRATE_AVG = 256;
-    private long SIP_VIDEO_BITRATE_MAX = 2048;
+    private long SIP_VIDEO_BITRATE_MAX = 1024;
     /**
      * Frame rate (1, 5, 10, 15, 20, 25, 30)
      */
-    private int SIP_VIDEO_FPS_DENUM = 1;
+    private int SIP_VIDEO_FPS_DENUM = 10;
     private int SIP_VIDEO_FPS_NUM = 30;
 
     public String getSIP_SERVER() {

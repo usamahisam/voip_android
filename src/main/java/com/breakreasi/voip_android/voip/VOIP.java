@@ -150,6 +150,12 @@ public class VOIP implements SipManagerCallback {
         }
     }
 
+    public void changeSurfaceRemoteVideo() {
+        if (this.type == VOIPType.SIP) {
+            sip.getVideo().toggleSurfaceRemoteFit();
+        }
+    }
+
     public void unsetRemoteVideo() {
         if (this.type == VOIPType.SIP) {
             sip.getVideo().unsetRemoteVideo();
@@ -161,7 +167,7 @@ public class VOIP implements SipManagerCallback {
         if (this.type == VOIPType.SIP) {
             SipCallData data = sip.getCall().getCallData();
             if (data != null) {
-                return new VOIPCallData(data.getDisplayName(), data.getPhone(), data.isVideo());
+                return new VOIPCallData(data.getDisplayName(), data.getPhone());
             }
         }
         return null;
@@ -212,9 +218,5 @@ public class VOIP implements SipManagerCallback {
     @Override
     public void onSipCall(SipCall call, String status) {
         notifyCallbacks(status);
-    }
-
-    @Override
-    public void onSipVideo(VideoWindow videoWindow, String status) {
     }
 }

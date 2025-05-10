@@ -4,6 +4,7 @@ import android.content.Context;
 import android.hardware.camera2.CameraManager;
 import android.media.AudioManager;
 import android.os.Build;
+import android.util.Log;
 
 import org.pjsip.PjCameraInfo2;
 import org.pjsip.pjsua2.AccountInfo;
@@ -82,13 +83,10 @@ public class SipManager {
             endpoint.libInit(epConfig);
 
             TransportConfig udpTransport = new TransportConfig();
+            udpTransport.setQosType(pj_qos_type.PJ_QOS_TYPE_VOICE);
             udpTransport.setPort(config.getSIP_PORT());
-            TransportConfig tcpTransport = new TransportConfig();
-            tcpTransport.setPort(config.getSIP_PORT());
-            TransportConfig tlsTransport = new TransportConfig();
 
             endpoint.transportCreate(config.getSIP_TRANSPORT_UDP(), udpTransport);
-            endpoint.transportCreate(config.getSIP_TRANSPORT_TCP(), tcpTransport);
 
             endpoint.libStart();
 
@@ -203,8 +201,12 @@ public class SipManager {
             this.call = call;
         }
         if (status.contains("connected")) {
+            getVideo().startRemoteVideo();
+            getVideo().startLocalVideo();
+        }
+        if (status.contains("media_video")) {
             setting.setAudioCommunication();
-            if (status.contains("video")) {
+            if (status.contains("_on")) {
                 setting.turnOnSpeakerphone();
             } else {
                 setting.turnOffSpeakerphone();
@@ -216,26 +218,6 @@ public class SipManager {
         }
         for (SipManagerCallback callback : callbacks) {
             callback.onSipCall(call, status);
-        }
-    }
-
-    public void onSipVideo(VideoWindow videoWindow, String status) {
-        if (status.equals("video_local")) {
-            if (getVideo().getLocalVideoHandler() != null) {
-                SipSurfaceUtil.surfaceToTop(getVideo().getLocalVideo());
-                getVideo().getLocalVideoHandler().setVideoWindow(videoWindow);
-//                SurfaceUtil.resizeSurface(getVideo().getLocalVideo(), videoWindow, false);
-//                SurfaceUtil.resizeSurface(getVideo().getLocalVideo(), getConfig().getSIP_VIDEO_WIDTH(), getConfig().getSIP_VIDEO_HEIGHT(), false);
-            }
-        } else if (status.equals("video_remote")) {
-            if (getVideo().getRemoteVideoHandler() != null) {
-                SipSurfaceUtil.surfaceToBottom(getVideo().getRemoteVideo());
-                getVideo().getRemoteVideoHandler().setVideoWindow(videoWindow);
-                SipSurfaceUtil.resizeSurface(getVideo().getRemoteVideo(), videoWindow, true);
-            }
-        }
-        for (SipManagerCallback callback : callbacks) {
-            callback.onSipVideo(videoWindow, status);
         }
     }
 
