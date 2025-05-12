@@ -58,7 +58,7 @@ public class SipAccount extends Account {
         accCfg.setIdUri("\"" + displayName + "\" <sip:" + username + "@" + manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT() + ">");
         accCfg.getSipConfig().setAuthCreds(credArray);
         accCfg.getSipConfig().getProxies().clear();
-        accCfg.getSipConfig().getProxies().add("sip:"+manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT() + ";transport=UDP;port=" + manager.getConfig().getSIP_PORT());
+//        accCfg.getSipConfig().getProxies().add("sip:"+manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT() + ";transport=UDP;port=" + manager.getConfig().getSIP_PORT());
         accCfg.getRegConfig().setRegistrarUri("sip:" + manager.getConfig().getSIP_SERVER() + ":" + manager.getConfig().getSIP_PORT());
         accCfg.getRegConfig().setRegisterOnAdd(true);
         accCfg.getRegConfig().setDropCallsOnFail(true);
@@ -70,8 +70,8 @@ public class SipAccount extends Account {
         accCfg.getNatConfig().setViaRewriteUse(pj_constants_.PJ_TRUE);
         accCfg.getNatConfig().setIceEnabled(false);
         accCfg.getNatConfig().setTurnEnabled(false);
-        accCfg.getNatConfig().setSipStunUse(pj_constants_.PJ_TRUE);
-        accCfg.getNatConfig().setMediaStunUse(pj_constants_.PJ_TRUE);
+        accCfg.getNatConfig().setSipStunUse(pj_constants_.PJ_FALSE);
+        accCfg.getNatConfig().setMediaStunUse(pj_constants_.PJ_FALSE);
         accCfg.getMediaConfig().setSrtpUse(pjmedia_srtp_use.PJMEDIA_SRTP_OPTIONAL);
         accCfg.getMediaConfig().setSrtpSecureSignaling(0);
         accCfg.getMediaConfig().setRtcpMuxEnabled(true);
