@@ -35,6 +35,7 @@ public class VOIP implements SipManagerCallback {
     private SipManager sip;
     private NotificationCall notificationCall;
     private Class<? extends BroadcastReceiver> br;
+    private final Handler uiHandler = new Handler(Looper.getMainLooper());
 
     public VOIP(Context context) {
         this.context = context;
@@ -184,8 +185,7 @@ public class VOIP implements SipManagerCallback {
     }
 
     public void notifyCallbacks(String status) {
-        Handler handler = new Handler(Looper.getMainLooper());
-        handler.post(() -> {
+        uiHandler.post(() -> {
             if (status.contains("incoming")) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     if (br != null) {
