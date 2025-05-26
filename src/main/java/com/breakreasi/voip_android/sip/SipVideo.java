@@ -40,6 +40,7 @@ public class SipVideo implements SipIncomingVideo {
         if (remoteVideo == null) return;
         if (remoteVideoHandler == null) return;
         SipSurfaceUtil.surfaceToBottom(localVideo);
+        SipSurfaceUtil.surfaceToTop(localVideo);
         this.remoteVideo.getHolder().addCallback(this.remoteVideoHandler);
     }
 
