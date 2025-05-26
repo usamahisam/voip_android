@@ -44,13 +44,13 @@ public class SipCall extends Call {
     private SipIncomingVideo incomingVideoCallback;
 
     public SipCall(Context cContext, SipManager mManager) {
-        super(mManager.getAccount());
+        super(mManager.getAccountSip());
         context = cContext;
         manager = mManager;
     }
 
     public SipCall(Context cContext, SipManager mManager, int callId) {
-        super(mManager.getAccount(), callId);
+        super(mManager.getAccountSip(), callId);
         context = cContext;
         manager = mManager;
     }

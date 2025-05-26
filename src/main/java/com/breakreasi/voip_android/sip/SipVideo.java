@@ -1,6 +1,7 @@
 package com.breakreasi.voip_android.sip;
 
-import android.os.CountDownTimer;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.SurfaceView;
 
 public class SipVideo implements SipIncomingVideo {
@@ -9,6 +10,7 @@ public class SipVideo implements SipIncomingVideo {
     private SipVideoSurfaceHandler localVideoHandler, remoteVideoHandler;
     private int w, h;
     private boolean toggleRemoteSurfaceFix = false;
+    private final Handler uiHandler = new Handler(Looper.getMainLooper());
 
     public SipVideo(SipManager manager) {
         this.manager = manager;
@@ -22,8 +24,8 @@ public class SipVideo implements SipIncomingVideo {
     public void startLocalVideo() {
         if (localVideo == null) return;
         if (localVideoHandler == null) return;
-        SipSurfaceUtil.surfaceToTop(localVideo);
         this.localVideo.getHolder().addCallback(this.localVideoHandler);
+        SipSurfaceUtil.surfaceToTop(localVideo);
     }
 
     public void unsetLocalVideo() {
@@ -42,15 +44,6 @@ public class SipVideo implements SipIncomingVideo {
         if (remoteVideoHandler == null) return;
         SipSurfaceUtil.surfaceToBottom(localVideo);
         this.remoteVideo.getHolder().addCallback(this.remoteVideoHandler);
-        new CountDownTimer(1000, 1000) {
-            @Override
-            public void onTick(long millisUntilFinished) {
-            }
-            @Override
-            public void onFinish() {
-                SipSurfaceUtil.surfaceToTop(localVideo);
-            }
-        }.start();
     }
 
     public void unsetRemoteVideo() {

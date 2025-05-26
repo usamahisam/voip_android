@@ -50,6 +50,8 @@ public class SipAccount extends Account {
         setAuth(displayName, username, password);
         this.registration = registration;
 
+        if (getLogin()) return;
+
         AuthCredInfoVector credArray = new AuthCredInfoVector();
         AuthCredInfo cred = new AuthCredInfo("digest", "*", username, 0, password);
         credArray.add(cred);
@@ -66,8 +68,8 @@ public class SipAccount extends Account {
         accCfg.getVideoConfig().setDefaultRenderDevice(0);
         accCfg.getVideoConfig().setAutoTransmitOutgoing(true);
         accCfg.getVideoConfig().setAutoShowIncoming(true);
-        accCfg.getNatConfig().setSdpNatRewriteUse(pj_constants_.PJ_TRUE);
-        accCfg.getNatConfig().setViaRewriteUse(pj_constants_.PJ_TRUE);
+//        accCfg.getNatConfig().setSdpNatRewriteUse(pj_constants_.PJ_TRUE);
+//        accCfg.getNatConfig().setViaRewriteUse(pj_constants_.PJ_TRUE);
         accCfg.getNatConfig().setIceEnabled(false);
         accCfg.getNatConfig().setTurnEnabled(false);
         accCfg.getNatConfig().setSipStunUse(pj_constants_.PJ_FALSE);
@@ -86,7 +88,7 @@ public class SipAccount extends Account {
         try {
             create(accCfg);
         } catch (Exception e) {
-            manager.onAccountSipStatus(null, e.getMessage());
+            manager.onAccountSipStatus(null, Objects.requireNonNull(e.getMessage()));
         }
     }
 
@@ -118,8 +120,20 @@ public class SipAccount extends Account {
         }
     }
 
+    public void accountInfo2() {
+    }
+
     public boolean getLogin() {
         return isLogin;
+    }
+
+    public boolean isAccountRegistered() {
+        try {
+            AccountInfo info = getInfo();
+            return info.getRegIsActive() && info.getRegStatus() == pjsip_status_code.PJSIP_SC_OK;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public SipCall initCall() {

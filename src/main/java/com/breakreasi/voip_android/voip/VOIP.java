@@ -57,8 +57,8 @@ public class VOIP implements SipManagerCallback {
         if (this.type == VOIPType.SIP
         && sip == null) {
             sip = new SipManager(context, cm, am);
-            sip.registerListener(this);
         }
+        sip.registerListener(this);
     }
 
     public AudioManager getAudioManager() {
@@ -75,7 +75,7 @@ public class VOIP implements SipManagerCallback {
 
     public void auth(String username, String password) {
         if (this.type == VOIPType.SIP) {
-            sip.register(username, username, password, true);
+            sip.register(username, username, password, false);
         }
     }
 

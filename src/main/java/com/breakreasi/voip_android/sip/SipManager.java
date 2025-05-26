@@ -4,14 +4,12 @@ import android.content.Context;
 import android.hardware.camera2.CameraManager;
 import android.media.AudioManager;
 import android.os.Build;
-import android.util.Log;
 
 import org.pjsip.PjCameraInfo2;
 import org.pjsip.pjsua2.AccountInfo;
 import org.pjsip.pjsua2.Endpoint;
 import org.pjsip.pjsua2.EpConfig;
 import org.pjsip.pjsua2.TransportConfig;
-import org.pjsip.pjsua2.VideoWindow;
 import org.pjsip.pjsua2.pj_qos_type;
 
 import java.util.ArrayList;
@@ -114,7 +112,11 @@ public class SipManager {
     }
 
     public boolean getLogin() {
-        return account.getLogin();
+        return getAccountSip().getLogin();
+    }
+
+    public boolean isAccountRegistered() {
+        return getAccountSip().isAccountRegistered();
     }
 
     public AudioManager getAudioManager() {
@@ -126,11 +128,7 @@ public class SipManager {
         this.displayName = displayName;
         this.username = username;
         this.password = password;
-        if (getLogin()) {
-            account.accountInfo();
-        } else {
-            account.register(displayName, username, password, registration);
-        }
+        getAccountSip().register(displayName, username, password, registration);
     }
 
     public SipCall initCall() {
@@ -141,7 +139,7 @@ public class SipManager {
     public void makeCall(String callTo, boolean callIsVideo) {
         this.callTo = callTo;
         this.callIsVideo = callIsVideo;
-        if (account.getLogin()) {
+        if (account.isAccountRegistered()) {
             this.call = initCall();
             this.call.createCall(callTo, callIsVideo);
             authSessionFor = "";
@@ -171,10 +169,6 @@ public class SipManager {
         return call;
     }
 
-    public SipAccount getAccount() {
-        return account;
-    }
-
     public void registerListener(SipManagerCallback callback) {
         callbacks.add(callback);
     }
@@ -201,12 +195,12 @@ public class SipManager {
             this.call = call;
         }
         if (status.contains("connected")) {
-            getVideo().startRemoteVideo();
-            getVideo().startLocalVideo();
         }
         if (status.contains("media_video")) {
             setting.setAudioCommunication();
             if (status.contains("_on")) {
+                getVideo().startRemoteVideo();
+                getVideo().startLocalVideo();
                 setting.turnOnSpeakerphone();
             } else {
                 setting.turnOffSpeakerphone();
