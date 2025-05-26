@@ -1,5 +1,6 @@
 package com.breakreasi.voip_android.sip;
 
+import android.os.CountDownTimer;
 import android.view.SurfaceView;
 
 public class SipVideo implements SipIncomingVideo {
@@ -40,8 +41,16 @@ public class SipVideo implements SipIncomingVideo {
         if (remoteVideo == null) return;
         if (remoteVideoHandler == null) return;
         SipSurfaceUtil.surfaceToBottom(localVideo);
-        SipSurfaceUtil.surfaceToTop(localVideo);
         this.remoteVideo.getHolder().addCallback(this.remoteVideoHandler);
+        new CountDownTimer(1000, 1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+            }
+            @Override
+            public void onFinish() {
+                SipSurfaceUtil.surfaceToTop(localVideo);
+            }
+        }.start();
     }
 
     public void unsetRemoteVideo() {
