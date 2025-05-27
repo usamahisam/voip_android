@@ -219,4 +219,10 @@ public class VOIP implements SipManagerCallback {
     public void onSipCall(SipCall call, String status) {
         notifyCallbacks(status);
     }
+
+    public void destroy() {
+        if (this.type == VOIPType.SIP) {
+            sip.destroy();
+        }
+    }
 }

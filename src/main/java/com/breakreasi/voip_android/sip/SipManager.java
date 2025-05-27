@@ -11,6 +11,7 @@ import org.pjsip.pjsua2.Endpoint;
 import org.pjsip.pjsua2.EpConfig;
 import org.pjsip.pjsua2.TransportConfig;
 import org.pjsip.pjsua2.pj_qos_type;
+import org.pjsip.pjsua2.pjsua_destroy_flag;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -111,12 +112,8 @@ public class SipManager {
         return endpoint;
     }
 
-    public boolean getLogin() {
-        return getAccountSip().getLogin();
-    }
-
     public boolean isAccountRegistered() {
-        return getAccountSip().isAccountRegistered();
+        return getAccountSip().isRegistered();
     }
 
     public AudioManager getAudioManager() {
@@ -128,7 +125,7 @@ public class SipManager {
         this.displayName = displayName;
         this.username = username;
         this.password = password;
-        getAccountSip().register(displayName, username, password, registration);
+        getAccountSip().register(displayName, username, password);
     }
 
     public SipCall initCall() {
@@ -139,13 +136,13 @@ public class SipManager {
     public void makeCall(String callTo, boolean callIsVideo) {
         this.callTo = callTo;
         this.callIsVideo = callIsVideo;
-        if (account.isAccountRegistered()) {
+        if (account.isRegistered()) {
             this.call = initCall();
             this.call.createCall(callTo, callIsVideo);
             authSessionFor = "";
         } else {
             authSessionFor = "makeCall";
-            account.register(displayName, username, password, true);
+            account.register(displayName, username, password);
         }
     }
 
@@ -194,8 +191,8 @@ public class SipManager {
         if (status.contains("incoming")) {
             this.call = call;
         }
-        if (status.contains("connected")) {
-        }
+//        if (status.contains("connected")) {
+//        }
         if (status.contains("media_video")) {
             setting.setAudioCommunication();
             if (status.contains("_on")) {
@@ -216,10 +213,11 @@ public class SipManager {
     }
 
     public void destroy() {
+        Runtime.getRuntime().gc();
         epConfig.delete();
-        endpoint.delete();
         try {
-            endpoint.libDestroy();
+            endpoint.libDestroy(pjsua_destroy_flag.PJSUA_DESTROY_NO_NETWORK);
+            endpoint.delete();
         } catch (Exception ignored) {
         }
     }

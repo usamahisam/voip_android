@@ -25,11 +25,11 @@ import com.breakreasi.voip_android.voip.VOIPCallData;
 import java.util.Calendar;
 
 public class NotificationCall {
-    private static String CHANNEL_ID = "VOIP_ANDROID_123456";
-    private static int NM_ID = 1001;
+    private static final String CHANNEL_ID = "VOIP_ANDROID_123456";
+    private static final int NM_ID = 1001;
 
-    private Context context;
-    private VOIP voip;
+    private final Context context;
+    private final VOIP voip;
     private Ringtone ringtone;
 
     public NotificationCall(Context context, VOIP voip) {
@@ -38,9 +38,14 @@ public class NotificationCall {
     }
 
     public void notificationChannel() {
-        NotificationChannel channel = null;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            channel = new NotificationChannel(CHANNEL_ID, "Call Notifications", NotificationManager.IMPORTANCE_HIGH);
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID,
+                    "Call Notifications",
+                    NotificationManager.IMPORTANCE_HIGH
+            );
+            channel.setDescription("Channel for incoming VOIP calls");
+            channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
             if (voip.getNotificationManager() != null) {
                 voip.getNotificationManager().createNotificationChannel(channel);
             }
@@ -49,21 +54,34 @@ public class NotificationCall {
 
     private Notification buildNotifyCall(Class<? extends BroadcastReceiver> broadcastClass, String title, String message) {
         notificationChannel();
-        NotificationCompat.Builder notificationCompat = new NotificationCompat.Builder(context, CHANNEL_ID);
-        notificationCompat.setContentTitle(title);
-        notificationCompat.setContentText(message);
-        notificationCompat.setSmallIcon(R.drawable.btn_startcall_normal);
-        notificationCompat.setOngoing(true);
-        notificationCompat.setAutoCancel(false);
-        notificationCompat.setShowWhen(false);
-        notificationCompat.setTimeoutAfter(9000000);
-        notificationCompat.setTicker("CALL_STATUS");
-        notificationCompat.setDefaults(Notification.DEFAULT_ALL);
-        notificationCompat.setLights(0xff0000ff, 3000000, 100000);
-        notificationCompat.setWhen(Calendar.getInstance().getTimeInMillis());
-        notificationCompat.setCategory(NotificationCompat.CATEGORY_CALL);
-        notificationCompat.setPriority(NotificationCompat.PRIORITY_MAX);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID);
+        builder.setContentTitle(title);
+        builder.setContentText(message);
+        builder.setSmallIcon(R.drawable.btn_startcall_normal);
+        builder.setOngoing(true);
+        builder.setAutoCancel(false);
+        builder.setShowWhen(true);
+        builder.setTimeoutAfter(30 * DateUtils.SECOND_IN_MILLIS); // 30 seconds
+        builder.setTicker("CALL_STATUS");
+        builder.setDefaults(Notification.DEFAULT_ALL);
+        builder.setWhen(Calendar.getInstance().getTimeInMillis());
+        builder.setCategory(NotificationCompat.CATEGORY_CALL);
+        builder.setPriority(NotificationCompat.PRIORITY_MAX);
+        builder.setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
 
+        // Full-screen intent for incoming call UI
+//        Intent fullScreenIntent = new Intent(context, com.breakreasi.voip_android.ui.IncomingCallActivity.class);
+//        fullScreenIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+//        PendingIntent fullScreenPendingIntent = PendingIntent.getActivity(
+//                context,
+//                3,
+//                fullScreenIntent,
+//                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+//        );
+//        builder.setFullScreenIntent(fullScreenPendingIntent, true);
+        builder.setStyle(new NotificationCompat.DecoratedCustomViewStyle());
+
+        // Actions: Answer & Decline
         Intent jawabIntent = new Intent(context, broadcastClass);
         jawabIntent.setAction("VOIP_ACTION_ANSWER_CALL");
         PendingIntent jawabPendingIntent = PendingIntent.getBroadcast(
@@ -72,6 +90,7 @@ public class NotificationCall {
                 jawabIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
+
         Intent tolakIntent = new Intent(context, broadcastClass);
         tolakIntent.setAction("VOIP_ACTION_DECLINE_CALL");
         PendingIntent tolakPendingIntent = PendingIntent.getBroadcast(
@@ -81,55 +100,65 @@ public class NotificationCall {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
-        notificationCompat.addAction(new NotificationCompat.Action.Builder(IconCompat.createWithResource(context, R.drawable.btn_startcall), "JAWAB", jawabPendingIntent).build());
-        notificationCompat.addAction(new NotificationCompat.Action.Builder(IconCompat.createWithResource(context, R.drawable.btn_endcall), "TOLAK", tolakPendingIntent).build());
+        builder.addAction(new NotificationCompat.Action.Builder(
+                IconCompat.createWithResource(context, R.drawable.btn_startcall),
+                "JAWAB",
+                jawabPendingIntent
+        ).build());
+
+        builder.addAction(new NotificationCompat.Action.Builder(
+                IconCompat.createWithResource(context, R.drawable.btn_endcall),
+                "TOLAK",
+                tolakPendingIntent
+        ).build());
+
+        // Vibration + Ringtone
         if (voip.getAudioManager().getRingerMode() == AudioManager.RINGER_MODE_VIBRATE) {
-            notificationCompat.setVibrate(new long[]{0, 10 * DateUtils.SECOND_IN_MILLIS});
+            builder.setVibrate(new long[]{0, 1000, 1000, 1000});
         } else if (voip.getAudioManager().getRingerMode() == AudioManager.RINGER_MODE_NORMAL) {
-            notificationCompat.setVibrate(new long[]{0, 10 * DateUtils.SECOND_IN_MILLIS});
-            toneDial();
+            builder.setVibrate(new long[]{0, 1000, 1000, 1000});
+            playRingtone();
         }
-        Notification notification  = notificationCompat.build();
-        notification.flags = notification.flags | Notification.FLAG_INSISTENT | Notification.FLAG_NO_CLEAR;
+
+        Notification notification = builder.build();
+        notification.flags |= Notification.FLAG_INSISTENT | Notification.FLAG_NO_CLEAR;
         return notification;
     }
 
     public void notifyCall(Class<? extends BroadcastReceiver> broadcastClass) {
         VOIPCallData data = voip.getCallData();
-        if (data == null) {
-            return;
-        }
+        if (data == null || voip.getNotificationManager() == null) return;
+
         String title = "Panggilan masuk";
         String message = data.getDisplayName() + " - " + data.getPhone();
-        if (voip.getNotificationManager() == null) {
-            return;
-        }
+
         voip.getNotificationManager().notify(NM_ID, buildNotifyCall(broadcastClass, title, message));
     }
 
     public void cancelNotify() {
-        stopMediaPlayer();
-        if (voip.getNotificationManager() == null) {
-            return;
+        stopRingtone();
+        if (voip.getNotificationManager() != null) {
+            voip.getNotificationManager().cancel(NM_ID);
         }
-        voip.getNotificationManager().cancel(NM_ID);
     }
 
-    private void toneDial() {
-        stopMediaPlayer();
-        Uri soundUri = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://"+ context.getPackageName() + "/" + R.raw.basic_ring);
-        ringtone = RingtoneManager.getRingtone(context, soundUri);
+    private void playRingtone() {
+        stopRingtone();
         try {
-            ringtone.play();
+            Uri soundUri = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" +
+                    context.getPackageName() + "/" + R.raw.basic_ring);
+            ringtone = RingtoneManager.getRingtone(context, soundUri);
+            if (ringtone != null && !ringtone.isPlaying()) {
+                ringtone.play();
+            }
         } catch (Exception ignored) {
-            ringtone = null;
         }
     }
 
-    public synchronized void stopMediaPlayer() {
+    public synchronized void stopRingtone() {
         if (ringtone != null) {
             try {
-                ringtone.stop();
+                if (ringtone.isPlaying()) ringtone.stop();
             } catch (Exception ignored) {
             }
             ringtone = null;

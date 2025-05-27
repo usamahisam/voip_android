@@ -1,7 +1,6 @@
 package com.breakreasi.voip_android.sip;
 
 import android.content.Context;
-import android.util.Log;
 
 import org.pjsip.pjsua2.Account;
 import org.pjsip.pjsua2.AccountConfig;
@@ -12,10 +11,8 @@ import org.pjsip.pjsua2.OnIncomingCallParam;
 import org.pjsip.pjsua2.OnRegStartedParam;
 import org.pjsip.pjsua2.OnRegStateParam;
 import org.pjsip.pjsua2.pj_constants_;
-import org.pjsip.pjsua2.pj_qos_type;
 import org.pjsip.pjsua2.pjmedia_srtp_use;
 import org.pjsip.pjsua2.pjsip_status_code;
-
 import java.util.Objects;
 
 public class SipAccount extends Account {
@@ -26,18 +23,17 @@ public class SipAccount extends Account {
     public String displayName;
     public String username;
     public String password;
-    public boolean registration;
-    public boolean isLogin;
+    public boolean isCreated;
+    public boolean isRegistered;
 
     public SipAccount(Context mContext, SipManager mManager) {
         context = mContext;
         manager = mManager;
-        isLogin = false;
+        isRegistered = false;
         call = null;
         displayName = "";
         username = "";
         password = "";
-        registration = false;
     }
 
     public void setAuth(String displayName, String username, String password) {
@@ -46,11 +42,20 @@ public class SipAccount extends Account {
         this.password = password;
     }
 
-    public void register(String displayName, String username, String password, boolean registration) {
-        setAuth(displayName, username, password);
-        this.registration = registration;
+    public void register(String displayName, String username, String password) {
+        if (isCreated) {
+            try {
+                setRegistration(true);
+            } catch (Exception ignored) {
+                manager.onAccountSipStatus(null, "Registration failed");
+            }
+            return;
+        }
 
-        if (getLogin()) return;
+        isCreated = false;
+        isRegistered = false;
+
+        setAuth(displayName, username, password);
 
         AuthCredInfoVector credArray = new AuthCredInfoVector();
         AuthCredInfo cred = new AuthCredInfo("digest", "*", username, 0, password);
@@ -87,53 +92,61 @@ public class SipAccount extends Account {
 
         try {
             create(accCfg);
+            isCreated = true;
         } catch (Exception e) {
+            isCreated = false;
             manager.onAccountSipStatus(null, Objects.requireNonNull(e.getMessage()));
         }
     }
 
-    public AccountConfig getAccountConfig() {
-        return accCfg;
+    public boolean isRegistered() {
+        return this.isRegistered;
     }
 
-    public void accountInfo() {
+    public void logout() {
         try {
-            AccountInfo accInfo = getInfo();
-            if (accInfo.getRegStatus() == pjsip_status_code.PJSIP_SC_TRYING) {
-                // trying wkwk
-            } else if (accInfo.getRegStatus() == pjsip_status_code.PJSIP_SC_OK) {
-                isLogin = true;
-                accInfo.setOnlineStatus(true);
-                manager.onAccountSipStatus(accInfo, "success");
-            } else if (accInfo.getRegStatus() == pjsip_status_code.PJSIP_SC_UNAUTHORIZED) {
-                if (this.registration) {
-                    this.registration = false;
-                    setRegistration(true);
-                } else {
-                    isLogin = false;
-                    manager.onAccountSipStatus(null, accInfo.getRegStatus() + " " + accInfo.getRegStatusText());
-                }
-            }
-        } catch (Exception e) {
-            isLogin = false;
-            manager.onAccountSipStatus(null, Objects.requireNonNull(e.getMessage()));
+            setRegistration(false);
+            delete();
+            isRegistered = false;
+        } catch (Exception ignored) {
         }
     }
 
-    public void accountInfo2() {
-    }
-
-    public boolean getLogin() {
-        return isLogin;
-    }
-
-    public boolean isAccountRegistered() {
+    public void checkAccountInfo() {
         try {
             AccountInfo info = getInfo();
-            return info.getRegIsActive() && info.getRegStatus() == pjsip_status_code.PJSIP_SC_OK;
-        } catch (Exception e) {
-            return false;
+            int code = info.getRegStatus();
+            String text = info.getRegStatusText();
+            switch (code) {
+                case pjsip_status_code.PJSIP_SC_OK:
+                    isRegistered = true;
+                    manager.onAccountSipStatus(info, "Registered successfully");
+                    break;
+                case pjsip_status_code.PJSIP_SC_UNAUTHORIZED:
+                    isRegistered = false;
+                    manager.onAccountSipStatus(null, "Unauthorized (401) - Check username/password");
+                    break;
+                default:
+                    isRegistered = false;
+                    manager.onAccountSipStatus(null, "Registration failed: " + code + " " + text);
+                    break;
+            }
+        } catch (Exception ignored) {
+            isRegistered = false;
+            manager.onAccountSipStatus(null, "Registration failed");
         }
+    }
+
+    @Override
+    public void onRegStarted(OnRegStartedParam prm) {
+        super.onRegStarted(prm);
+        checkAccountInfo();
+    }
+
+    @Override
+    public void onRegState(OnRegStateParam prm) {
+        super.onRegState(prm);
+        checkAccountInfo();
     }
 
     public SipCall initCall() {
@@ -152,23 +165,12 @@ public class SipAccount extends Account {
         super.onIncomingCall(prm);
         if (call != null) call.delete();
         call = new SipCall(context, manager, prm.getCallId());
+        call.sendRinging();
         try {
             String stat_video = (call.getInfo().getRemOfferer() && call.getInfo().getRemVideoCount() > 0) ? "video" : "audio";
             manager.onCall(call, "call_incoming_" + stat_video);
         } catch (Exception ignored) {
             manager.onCall(call, "call_incoming_voice");
         }
-    }
-
-    @Override
-    public void onRegState(OnRegStateParam prm) {
-        super.onRegState(prm);
-        accountInfo();
-    }
-
-    @Override
-    public void onRegStarted(OnRegStartedParam prm) {
-        super.onRegStarted(prm);
-        accountInfo();
     }
 }

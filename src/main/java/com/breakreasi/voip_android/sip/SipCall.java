@@ -259,6 +259,15 @@ public class SipCall extends Call {
         }
     }
 
+    public void sendRinging() {
+        try {
+            CallOpParam callOpParam = new CallOpParam();
+            callOpParam.setStatusCode(pjsip_status_code.PJSIP_SC_RINGING);
+            answer(callOpParam);
+        } catch (Exception ignored) {
+        }
+    }
+
     public void accept() {
         CallOpParam callOpParam = new CallOpParam();
         callOpParam.setStatusCode(pjsip_status_code.PJSIP_SC_OK);
