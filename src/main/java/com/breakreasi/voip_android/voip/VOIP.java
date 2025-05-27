@@ -75,7 +75,7 @@ public class VOIP implements SipManagerCallback {
 
     public void auth(String username, String password) {
         if (this.type == VOIPType.SIP) {
-            sip.register(username, username, password, false);
+            sip.register(username, username, password);
         }
     }
 

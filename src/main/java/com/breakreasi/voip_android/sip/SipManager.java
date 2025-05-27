@@ -120,7 +120,7 @@ public class SipManager {
         return am;
     }
 
-    public void register(String displayName, String username, String password, boolean registration) {
+    public void register(String displayName, String username, String password) {
         authSessionFor = "";
         this.displayName = displayName;
         this.username = username;
