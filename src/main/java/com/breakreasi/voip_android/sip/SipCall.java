@@ -1,6 +1,7 @@
 package com.breakreasi.voip_android.sip;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.Surface;
 
 import androidx.annotation.Nullable;
@@ -210,7 +211,7 @@ public class SipCall extends Call {
             videoPreviewOpParam.setWindow(videoWindowHandle);
             try {
                 localVideo.start(videoPreviewOpParam);
-            } catch (Exception ignored) {
+            } catch (Exception e) {
             }
         }
     }

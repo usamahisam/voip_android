@@ -8,10 +8,13 @@ import android.media.AudioManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.SurfaceView;
 
 import androidx.annotation.Nullable;
 
+import com.breakreasi.voip_android.agora.AgoraIEventListener;
+import com.breakreasi.voip_android.agora.AgoraManager;
 import com.breakreasi.voip_android.notification.NotificationCall;
 import com.breakreasi.voip_android.sip.SipCall;
 import com.breakreasi.voip_android.sip.SipCallData;
@@ -24,8 +27,11 @@ import org.pjsip.pjsua2.VideoWindow;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
-public class VOIP implements SipManagerCallback {
+import io.agora.rtc2.Constants;
+
+public class VOIP implements SipManagerCallback, AgoraIEventListener {
     private Context context;
     private VOIPType type;
     private List<VOIPCallback> callbacks;
@@ -33,6 +39,8 @@ public class VOIP implements SipManagerCallback {
     private AudioManager am;
     private NotificationManager nm;
     private SipManager sip;
+    private AgoraManager agora;
+    private boolean isCallActive;
     private NotificationCall notificationCall;
     private Class<? extends BroadcastReceiver> br;
     private final Handler uiHandler = new Handler(Looper.getMainLooper());
@@ -47,6 +55,7 @@ public class VOIP implements SipManagerCallback {
     }
 
     public void init(VOIPType type, Context context) {
+        this.isCallActive = false;
         setType(type);
         if (cm == null) {
             cm = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
@@ -60,10 +69,19 @@ public class VOIP implements SipManagerCallback {
         if (notificationCall == null) {
             notificationCall = new NotificationCall(context, this);
         }
-        if (this.type == VOIPType.SIP
-        && sip == null) {
+        if (this.type == VOIPType.SIP && sip != null) {
+            sip.destroy();
+        }
+        if (this.type == VOIPType.AGORA && agora != null) {
+            agora.destroyEngine();
+        }
+        if (this.type == VOIPType.SIP) {
             sip = new SipManager(context, cm, am);
             sip.registerListener(this);
+        }
+        if (this.type == VOIPType.AGORA) {
+            agora = new AgoraManager(context);
+            agora.registerEventListener(this);
         }
     }
 
@@ -79,10 +97,16 @@ public class VOIP implements SipManagerCallback {
         return notificationCall;
     }
 
-    public void auth(String username, String password) {
+    public void auth(String username, String password, String token, boolean isVideo) {
         if (this.type == VOIPType.SIP) {
             sip.register(username, username, password);
+        } else if (this.type == VOIPType.AGORA) {
+            agora.auth(username, token, isVideo);
         }
+    }
+
+    public boolean isCallActive() {
+        return isCallActive;
     }
 
     public void makeCall(String to, boolean isVideo) {
@@ -94,12 +118,16 @@ public class VOIP implements SipManagerCallback {
     public void accept() {
         if (this.type == VOIPType.SIP) {
             sip.accept();
+        } else if (this.type == VOIPType.AGORA) {
+            agora.accept();
         }
     }
 
     public void hangup() {
         if (this.type == VOIPType.SIP) {
             sip.decline();
+        } else if (this.type == VOIPType.AGORA) {
+            agora.hangup();
         }
     }
 
@@ -110,6 +138,12 @@ public class VOIP implements SipManagerCallback {
             } else {
                 sip.getSettingSip().unmuteMic();
             }
+        } else if (this.type == VOIPType.AGORA) {
+            if (isMute) {
+                agora.rtcEngine().muteLocalAudioStream(true);
+            } else {
+                agora.rtcEngine().muteLocalAudioStream(false);
+            }
         }
     }
 
@@ -119,6 +153,12 @@ public class VOIP implements SipManagerCallback {
                 sip.getSettingSip().turnOnSpeakerphone();
             } else {
                 sip.getSettingSip().turnOffSpeakerphone();
+            }
+        } else if (this.type == VOIPType.AGORA) {
+            if (isLoudspeaker) {
+                agora.rtcEngine().enableLocalAudio(true);
+            } else {
+                agora.rtcEngine().enableLocalAudio(false);
             }
         }
     }
@@ -136,36 +176,47 @@ public class VOIP implements SipManagerCallback {
             } else if (voipCamera == VOIPCamera.BACK) {
                 sip.getSettingSip().switchCamera(SipCamera.BACK);
             }
+        } else if (this.type == VOIPType.AGORA) {
+            agora.rtcEngine().switchCamera();
         }
     }
 
     public void setLocalVideo(SurfaceView localVideo) {
         if (this.type == VOIPType.SIP) {
             sip.getVideo().setLocalVideo(localVideo);
+        } else if (this.type == VOIPType.AGORA) {
+            agora.setLocalVideo(localVideo);
         }
     }
 
     public void unsetLocalVideo() {
         if (this.type == VOIPType.SIP) {
             sip.getVideo().unsetLocalVideo();
+        } else if (this.type == VOIPType.AGORA) {
+            agora.unsetLocalVideo();
         }
     }
 
     public void setRemoteVideo(SurfaceView remoteVideo) {
         if (this.type == VOIPType.SIP) {
             sip.getVideo().setRemoteVideo(remoteVideo);
+        } else if (this.type == VOIPType.AGORA) {
+            agora.setRemoteVideo(remoteVideo);
         }
     }
 
     public void changeSurfaceRemoteVideo() {
         if (this.type == VOIPType.SIP) {
             sip.getVideo().toggleSurfaceRemoteFit();
+        } else if (this.type == VOIPType.AGORA) {
         }
     }
 
     public void unsetRemoteVideo() {
         if (this.type == VOIPType.SIP) {
             sip.getVideo().unsetRemoteVideo();
+        } else if (this.type == VOIPType.AGORA) {
+            agora.unsetRemoteVideo();
         }
     }
 
@@ -176,6 +227,8 @@ public class VOIP implements SipManagerCallback {
             if (data != null) {
                 return new VOIPCallData(data.getDisplayName(), data.getPhone());
             }
+        } else if (this.type == VOIPType.AGORA) {
+            return new VOIPCallData(agora.getDisplayName(), agora.getDisplayName());
         }
         return null;
     }
@@ -191,11 +244,12 @@ public class VOIP implements SipManagerCallback {
     }
 
     public void notifyCallbacks(String status) {
+        isCallActive = status.contains("connected");
         uiHandler.post(() -> {
             if (status.contains("incoming")) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     if (br != null) {
-                        getNotification().notifyCall(br);
+                        getNotification().notifyCall(status.contains("agora") ? VOIPType.AGORA : VOIPType.SIP, br);
                     }
                 }
             }
@@ -226,9 +280,66 @@ public class VOIP implements SipManagerCallback {
         notifyCallbacks(status);
     }
 
+    @Override
+    public void onAgoraStatus(String status) {
+        if (status.contains("success")) {
+            notifyCallbacks("call_incoming_agora");
+        }
+    }
+
+    @Override
+    public void onJoinChannelSuccess(String channel, int uid, int elapsed) {
+    }
+
+    @Override
+    public void onRejoinChannelSuccess(String channel, int uid, int elapsed) {
+    }
+
+    @Override
+    public void onUserJoined(int uid, int elapsed) {
+        isCallActive = true;
+        if (agora.getIsVideo()) {
+            agora.startRemoteVideo(uid);
+            agora.startLocalVideo();
+        }
+        notifyCallbacks("call_connected");
+        notifyCallbacks("call_media_video_" + (agora.getIsVideo() ? "on" : "off"));
+    }
+
+    @Override
+    public void onUserOffline(int uid, int reason) {
+        isCallActive = false;
+        notifyCallbacks("call_disconnected");
+    }
+
+    @Override
+    public void onConnectionStateChanged(int status, int reason) {
+        if (status == Constants.CONNECTION_STATE_DISCONNECTED) {
+            isCallActive = false;
+            notifyCallbacks("call_disconnected");
+        }
+    }
+
+    @Override
+    public void onPeersOnlineStatusChanged(Map<String, Integer> map) {
+
+    }
+
+    @Override
+    public void onError(int err) {
+        notifyCallbacks("call_disconnected");
+    }
+
     public void destroy() {
         if (this.type == VOIPType.SIP) {
+            sip.unregisterListener(this);
             sip.destroy();
+            sip = null;
+        }
+        if (this.type == VOIPType.AGORA) {
+            agora.removeEventListener(this);
+            agora.destroyEngine();
+            agora = null;
         }
     }
 }

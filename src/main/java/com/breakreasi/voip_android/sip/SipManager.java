@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SipManager {
-    private Context mContext;
+    private Context context;
     private CameraManager cm;
     private AudioManager am;
     private SipConfig config;
@@ -36,7 +36,7 @@ public class SipManager {
     private List<SipManagerCallback> callbacks;
 
     public SipManager(Context context, CameraManager cm, AudioManager am) {
-        this.mContext = context;
+        this.context = context;
         this.cm = cm;
         this.am = am;
         callbacks = new ArrayList<>();
@@ -97,7 +97,7 @@ public class SipManager {
 
     private void init() {
         setting = new SipSetting(this);
-        account = new SipAccount(mContext, this);
+        account = new SipAccount(context, this);
     }
 
     public SipSetting getSettingSip() {
@@ -191,8 +191,9 @@ public class SipManager {
         if (status.contains("incoming")) {
             this.call = call;
         }
-//        if (status.contains("connected")) {
-//        }
+        if (status.contains("connected")) {
+            this.call = call;
+        }
         if (status.contains("media_video")) {
             setting.setAudioCommunication();
             if (status.contains("_on")) {
@@ -204,6 +205,8 @@ public class SipManager {
             }
         }
         if (status.contains("disconnected")) {
+            getVideo().unsetLocalVideo();
+            getVideo().unsetRemoteVideo();
             setting.setAudioNormal();
             this.call = null;
         }
@@ -214,10 +217,24 @@ public class SipManager {
 
     public void destroy() {
         Runtime.getRuntime().gc();
-        epConfig.delete();
         try {
-            endpoint.libDestroy(pjsua_destroy_flag.PJSUA_DESTROY_NO_NETWORK);
-            endpoint.delete();
+            if (account != null) {
+                account.shutdown();
+                account.delete();
+                account = null;
+            }
+            if (call != null) {
+                call.delete();
+                call = null;
+            }
+        } catch (Exception ignored) {
+        }
+        try {
+            if (endpoint != null) {
+                endpoint.libDestroy();
+                endpoint.delete();
+                endpoint = null;
+            }
         } catch (Exception ignored) {
         }
     }

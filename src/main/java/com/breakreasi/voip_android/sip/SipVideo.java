@@ -7,10 +7,10 @@ import android.view.SurfaceView;
 public class SipVideo implements SipIncomingVideo {
     private SipManager manager;
     private SurfaceView localVideo, remoteVideo;
-    private SipVideoSurfaceHandler localVideoHandler, remoteVideoHandler;
+    private SipSurfaceRemoteHandler remoteVideoHandler;
+    private SipSurfaceLocalHandler localVideoHandler;
     private int w, h;
     private boolean toggleRemoteSurfaceFix = false;
-    private final Handler uiHandler = new Handler(Looper.getMainLooper());
 
     public SipVideo(SipManager manager) {
         this.manager = manager;
@@ -18,14 +18,13 @@ public class SipVideo implements SipIncomingVideo {
 
     public void setLocalVideo(SurfaceView localVideo) {
         this.localVideo = localVideo;
-        this.localVideoHandler = new SipVideoSurfaceHandler(manager);
     }
 
     public void startLocalVideo() {
         if (localVideo == null) return;
-        if (localVideoHandler == null) return;
-        this.localVideo.getHolder().addCallback(this.localVideoHandler);
+        this.localVideoHandler = new SipSurfaceLocalHandler(manager);
         SipSurfaceUtil.surfaceToTop(localVideo);
+        this.localVideo.getHolder().addCallback(this.localVideoHandler);
     }
 
     public void unsetLocalVideo() {
@@ -35,13 +34,12 @@ public class SipVideo implements SipIncomingVideo {
 
     public void setRemoteVideo(SurfaceView remoteVideo) {
         this.remoteVideo = remoteVideo;
-        this.remoteVideoHandler = new SipVideoSurfaceHandler(manager, this);
         this.toggleRemoteSurfaceFix = false;
     }
 
     public void startRemoteVideo() {
         if (remoteVideo == null) return;
-        if (remoteVideoHandler == null) return;
+        remoteVideoHandler = new SipSurfaceRemoteHandler(manager, this);
         SipSurfaceUtil.surfaceToBottom(localVideo);
         this.remoteVideo.getHolder().addCallback(this.remoteVideoHandler);
     }
