@@ -48,17 +48,23 @@ public class VOIP implements SipManagerCallback {
 
     public void init(VOIPType type, Context context) {
         setType(type);
-        cm = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
-        am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-        nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (cm == null) {
+            cm = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+        }
+        if (am == null) {
+            am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+        }
+        if (nm == null) {
+            nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        }
         if (notificationCall == null) {
             notificationCall = new NotificationCall(context, this);
         }
         if (this.type == VOIPType.SIP
         && sip == null) {
             sip = new SipManager(context, cm, am);
+            sip.registerListener(this);
         }
-        sip.registerListener(this);
     }
 
     public AudioManager getAudioManager() {
