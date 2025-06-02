@@ -43,6 +43,11 @@ public class SipAccount extends Account {
     }
 
     public void register(String displayName, String username, String password) {
+        if (getId() != -1) {
+            checkAccountInfo();
+            return;
+        }
+
         if (isCreated) {
             try {
                 setRegistration(true);
@@ -140,7 +145,6 @@ public class SipAccount extends Account {
     @Override
     public void onRegStarted(OnRegStartedParam prm) {
         super.onRegStarted(prm);
-        checkAccountInfo();
     }
 
     @Override

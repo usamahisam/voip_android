@@ -4,6 +4,7 @@ import android.content.Context;
 import android.hardware.camera2.CameraManager;
 import android.media.AudioManager;
 import android.os.Build;
+import android.util.Log;
 
 import org.pjsip.PjCameraInfo2;
 import org.pjsip.pjsua2.AccountInfo;
@@ -125,6 +126,7 @@ public class SipManager {
         this.displayName = displayName;
         this.username = username;
         this.password = password;
+        Log.i("09a78s9d7a9s78d", "register:");
         getAccountSip().register(displayName, username, password);
     }
 
@@ -216,7 +218,6 @@ public class SipManager {
     }
 
     public void destroy() {
-        Runtime.getRuntime().gc();
         try {
             if (account != null) {
                 account.shutdown();
@@ -230,12 +231,14 @@ public class SipManager {
         } catch (Exception ignored) {
         }
         try {
-            if (endpoint != null) {
-                endpoint.libDestroy();
-                endpoint.delete();
-                endpoint = null;
-            }
+            endpoint.libDestroy();
+            endpoint.delete();
         } catch (Exception ignored) {
+        } finally {
+            endpoint = null;
+            epConfig.delete();
+            epConfig = null;
         }
+        Runtime.getRuntime().gc();
     }
 }

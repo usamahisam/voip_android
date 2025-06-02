@@ -6,20 +6,20 @@ import java.util.List;
 import io.agora.rtc2.IRtcEngineEventHandler;
 
 public class AgoraEngineEventListener extends IRtcEngineEventHandler {
-    private final List<AgoraIEventListener> mListeners = new ArrayList<>();
+    private final List<AgoraIEventListener2> mListeners = new ArrayList<>();
 
-    public void registerEventListener(AgoraIEventListener listener) {
+    public void registerEventListener(AgoraIEventListener2 listener) {
         if (!mListeners.contains(listener)) {
             mListeners.add(listener);
         }
     }
 
-    public void removeEventListener(AgoraIEventListener listener) {
+    public void removeEventListener(AgoraIEventListener2 listener) {
         mListeners.remove(listener);
     }
 
     public void onAgoraStatus(String status) {
-        for (AgoraIEventListener listener : mListeners) {
+        for (AgoraIEventListener2 listener : mListeners) {
             listener.onAgoraStatus(status);
         }
     }

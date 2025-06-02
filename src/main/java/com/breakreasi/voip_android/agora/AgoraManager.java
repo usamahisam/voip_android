@@ -122,11 +122,11 @@ public class AgoraManager {
         return rtcEngine;
     }
 
-    public void registerEventListener(AgoraIEventListener listener) {
+    public void registerEventListener(AgoraIEventListener2 listener) {
         eventListener.registerEventListener(listener);
     }
 
-    public void removeEventListener(AgoraIEventListener listener) {
+    public void removeEventListener(AgoraIEventListener2 listener) {
         eventListener.removeEventListener(listener);
     }
 

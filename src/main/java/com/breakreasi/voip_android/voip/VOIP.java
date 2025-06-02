@@ -8,12 +8,11 @@ import android.media.AudioManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.view.SurfaceView;
 
 import androidx.annotation.Nullable;
 
-import com.breakreasi.voip_android.agora.AgoraIEventListener;
+import com.breakreasi.voip_android.agora.AgoraIEventListener2;
 import com.breakreasi.voip_android.agora.AgoraManager;
 import com.breakreasi.voip_android.notification.NotificationCall;
 import com.breakreasi.voip_android.sip.SipCall;
@@ -23,7 +22,6 @@ import com.breakreasi.voip_android.sip.SipManager;
 import com.breakreasi.voip_android.sip.SipManagerCallback;
 
 import org.pjsip.pjsua2.AccountInfo;
-import org.pjsip.pjsua2.VideoWindow;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +29,7 @@ import java.util.Map;
 
 import io.agora.rtc2.Constants;
 
-public class VOIP implements SipManagerCallback, AgoraIEventListener {
+public class VOIP implements SipManagerCallback, AgoraIEventListener2 {
     private Context context;
     private VOIPType type;
     private List<VOIPCallback> callbacks;
@@ -69,12 +67,12 @@ public class VOIP implements SipManagerCallback, AgoraIEventListener {
         if (notificationCall == null) {
             notificationCall = new NotificationCall(context, this);
         }
-        if (this.type == VOIPType.SIP && sip != null) {
-            sip.destroy();
-        }
-        if (this.type == VOIPType.AGORA && agora != null) {
-            agora.destroyEngine();
-        }
+//        if (this.type == VOIPType.SIP && sip != null) {
+//            sip.destroy();
+//        }
+//        if (this.type == VOIPType.AGORA && agora != null) {
+//            agora.destroyEngine();
+//        }
         if (this.type == VOIPType.SIP) {
             sip = new SipManager(context, cm, am);
             sip.registerListener(this);
@@ -223,6 +221,8 @@ public class VOIP implements SipManagerCallback, AgoraIEventListener {
     @Nullable
     public VOIPCallData getCallData() {
         if (this.type == VOIPType.SIP) {
+            if (sip == null) return null;
+            if (sip.getCall() == null) return null;
             SipCallData data = sip.getCall().getCallData();
             if (data != null) {
                 return new VOIPCallData(data.getDisplayName(), data.getPhone());
@@ -331,12 +331,12 @@ public class VOIP implements SipManagerCallback, AgoraIEventListener {
     }
 
     public void destroy() {
-        if (this.type == VOIPType.SIP) {
+        if (sip != null) {
             sip.unregisterListener(this);
             sip.destroy();
             sip = null;
         }
-        if (this.type == VOIPType.AGORA) {
+        if (agora != null) {
             agora.removeEventListener(this);
             agora.destroyEngine();
             agora = null;
